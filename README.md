@@ -1,3 +1,3 @@
-# Candy WebUI
+# Cacao
 
-Candy Server with Web Control Interface
+Candy Server with WebUI

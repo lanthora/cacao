@@ -1,4 +1,4 @@
-module github.com/lanthora/candy-webui
+module github.com/lanthora/cacao
 
 go 1.22.5
 
