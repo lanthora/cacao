@@ -39,3 +39,19 @@ func GetString(key string) (value string, ok bool) {
 
 	return
 }
+
+func SetBool(key string, value bool) {
+	SetString(key, func() string {
+		if value {
+			return "true"
+		}
+		return "false"
+	}())
+}
+
+func GetBool(key string) (value bool, ok bool) {
+	if v, ok := GetString(key); ok {
+		return v == "true", true
+	}
+	return
+}
