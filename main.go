@@ -16,7 +16,10 @@ func main() {
 	logger.Info("listen=[%v]", addr)
 
 	r := gin.New()
+	r.Use(user.LoginMiddleware())
 	r.POST("/api/user/register", user.Register)
+	r.POST("/api/user/login", user.Login)
+	r.POST("/api/user/logout", user.Logout)
 
 	if err := r.Run(addr); err != nil {
 		logger.Fatal("service run failed: %v", err)
