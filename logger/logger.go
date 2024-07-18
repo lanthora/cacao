@@ -3,8 +3,8 @@ package logger
 import (
 	"bytes"
 	"fmt"
-	"os"
 
+	"github.com/lanthora/cacao/argp"
 	"github.com/sirupsen/logrus"
 )
 
@@ -24,18 +24,15 @@ func init() {
 	logger = logrus.New()
 	logger.SetReportCaller(true)
 	logger.SetFormatter(&logFormatter{})
-	if value := os.Getenv("CUCURBITA_LOGLEVEL"); len(value) != 0 {
-		setLogLevel(value)
-	}
-}
 
-func setLogLevel(level string) {
-	switch level {
+	switch argp.Get("loglevel", "info") {
 	case "debug":
 		logger.SetLevel(logrus.DebugLevel)
 	case "info":
 		logger.SetLevel(logrus.InfoLevel)
 	}
+
+	Info("loglevel=[%v]", logger.GetLevel().String())
 }
 
 func Fatal(format string, args ...interface{}) {
