@@ -1,47 +1,17 @@
-package user
+package api
 
 import (
-	"crypto/sha256"
-	"fmt"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/lanthora/cacao/logger"
+	"github.com/lanthora/cacao/candy"
+	"github.com/lanthora/cacao/model"
 	"github.com/lanthora/cacao/status"
 	"github.com/lanthora/cacao/storage"
-	"gorm.io/gorm"
 )
-
-type User struct {
-	gorm.Model
-	Name     string `gorm:"uniqueIndex"`
-	Password string
-	Token    string
-	Role     string
-	IP       string
-}
-
-func init() {
-	db := storage.Get()
-	err := db.AutoMigrate(User{})
-	if err != nil {
-		logger.Fatal("auto migrate users failed: %v", err)
-	}
-}
-
-func isAlphanumeric(s string) bool {
-	match, _ := regexp.MatchString("^[a-zA-Z0-9]+$", s)
-	return match
-}
-
-func sha256sum(data []byte) string {
-	hash := sha256.Sum256(data)
-	return fmt.Sprintf("%x", hash[:])
-}
 
 func LoginMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -67,7 +37,7 @@ func LoginMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		user := &User{}
+		user := &model.User{}
 		user.ID = uint(id)
 
 		db := storage.Get()
@@ -82,7 +52,7 @@ func LoginMiddleware() gin.HandlerFunc {
 	}
 }
 
-func Register(c *gin.Context) {
+func UserRegister(c *gin.Context) {
 	var request struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
@@ -91,7 +61,7 @@ func Register(c *gin.Context) {
 		status.UpdateCode(c, status.InvalidRequest)
 		return
 	}
-	if len(request.Username) < 3 || !isAlphanumeric(request.Username) {
+	if len(request.Username) < 3 || !candy.IsAlphanumeric(request.Username) {
 		status.UpdateCode(c, status.InvalidUsername)
 		return
 	}
@@ -103,7 +73,7 @@ func Register(c *gin.Context) {
 	db := storage.Get()
 	if func() bool {
 		count := int64(0)
-		db.Model(&User{}).Where(&User{IP: c.ClientIP(), Role: "normal"}).Where("created_at > ?", time.Now().Add(-24*time.Hour)).Count(&count)
+		db.Model(&model.User{}).Where(&model.User{IP: c.ClientIP(), Role: "normal"}).Where("created_at > ?", time.Now().Add(-24*time.Hour)).Count(&count)
 		return count > 0
 	}() {
 		status.UpdateCode(c, status.RegisterTooFrequently)
@@ -112,7 +82,7 @@ func Register(c *gin.Context) {
 
 	if func() bool {
 		count := int64(0)
-		db.Model(&User{}).Where(&User{Name: request.Username}).Count(&count)
+		db.Model(&model.User{}).Where(&model.User{Name: request.Username}).Count(&count)
 		return count > 0
 	}() {
 		status.UpdateCode(c, status.UsernameAlreadyTaken)
@@ -121,16 +91,16 @@ func Register(c *gin.Context) {
 
 	role := func() string {
 		count := int64(0)
-		db.Model(&User{}).Count(&count)
+		db.Model(&model.User{}).Count(&count)
 		if count == 0 {
 			return "admin"
 		}
 		return "normal"
 	}()
 
-	user := User{
+	user := model.User{
 		Name:     request.Username,
-		Password: sha256sum([]byte(request.Password)),
+		Password: candy.Sha256sum([]byte(request.Password)),
 		Token:    uuid.NewString(),
 		Role:     role,
 		IP:       c.ClientIP(),
@@ -148,9 +118,21 @@ func Register(c *gin.Context) {
 		"name": user.Name,
 		"role": user.Role,
 	})
+
+	if role == "normal" {
+		modelNet := &model.Net{
+			UserID:    user.ID,
+			Name:      "@",
+			Password:  request.Password,
+			DHCP:      "192.168.202.0/24",
+			Broadcast: true,
+		}
+		modelNet.Create()
+		candy.InsertNet(modelNet)
+	}
 }
 
-func Login(c *gin.Context) {
+func UserLogin(c *gin.Context) {
 	var request struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
@@ -160,19 +142,20 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	user := User{
+	user := model.User{
 		Name:     request.Username,
-		Password: sha256sum([]byte(request.Password)),
+		Password: candy.Sha256sum([]byte(request.Password)),
 	}
 
 	db := storage.Get()
+
 	if result := db.Where(user).Take(&user); result.Error != nil {
 		status.UpdateCode(c, status.UsernameOrPasswordIncorrect)
 		return
 	}
 
 	user.Token = uuid.NewString()
-	db.Save(user)
+	user.Save()
 
 	c.SetCookie("id", strconv.FormatUint(uint64(user.ID), 10), 86400, "/", "", false, true)
 	c.SetCookie("token", user.Token, 86400, "/", "", false, true)
@@ -183,12 +166,10 @@ func Login(c *gin.Context) {
 	})
 }
 
-func Logout(c *gin.Context) {
-	user := c.MustGet("user").(*User)
+func UserLogout(c *gin.Context) {
+	user := c.MustGet("user").(*model.User)
 	user.Token = uuid.NewString()
-
-	db := storage.Get()
-	db.Save(user)
+	user.Save()
 
 	c.SetCookie("id", "", -1, "/", "", false, true)
 	c.SetCookie("token", "", -1, "/", "", false, true)
