@@ -6,20 +6,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const (
-	Success int = iota
-	Unexpected
-	NotLoggedIn
-	InvalidRequest
-	InvalidUsername
-	InvalidPassword
-	RegisterTooFrequently
-	UsernameAlreadyTaken
-	UsernameOrPasswordIncorrect
-)
-
-var statusMessage map[int]string
-
 func init() {
 	statusMessage = make(map[int]string)
 	statusMessage[Success] = "success"
@@ -31,7 +17,25 @@ func init() {
 	statusMessage[RegisterTooFrequently] = "register too frequently"
 	statusMessage[UsernameAlreadyTaken] = "username already taken"
 	statusMessage[UsernameOrPasswordIncorrect] = "username or password is incorret"
+	statusMessage[NetworkAlreadyExists] = "network already exists"
+	statusMessage[NetworkNotExists] = "network not exists"
 }
+
+const (
+	Success int = iota
+	Unexpected
+	NotLoggedIn
+	InvalidRequest
+	InvalidUsername
+	InvalidPassword
+	RegisterTooFrequently
+	UsernameAlreadyTaken
+	UsernameOrPasswordIncorrect
+	NetworkAlreadyExists
+	NetworkNotExists
+)
+
+var statusMessage map[int]string
 
 func UpdateSuccess(c *gin.Context, data gin.H) {
 	c.JSON(http.StatusOK, gin.H{

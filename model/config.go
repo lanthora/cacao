@@ -1,16 +1,10 @@
-package configs
+package model
 
 import (
 	"github.com/lanthora/cacao/logger"
 	"github.com/lanthora/cacao/storage"
 	"gorm.io/gorm"
 )
-
-type Config struct {
-	gorm.Model
-	Key   string `gorm:"uniqueIndex"`
-	Value string
-}
 
 func init() {
 	db := storage.Get()
@@ -20,12 +14,23 @@ func init() {
 	}
 }
 
+type Config struct {
+	gorm.Model
+	Key   string `gorm:"uniqueIndex"`
+	Value string
+}
+
+func (c *Config) Save() {
+	db := storage.Get()
+	db.Save(c)
+}
+
 func SetString(key string, value string) {
 	db := storage.Get()
 	config := &Config{Key: key}
 	db.Take(config)
 	config.Value = value
-	db.Save(config)
+	config.Save()
 }
 
 func GetString(key string) (value string, ok bool) {
