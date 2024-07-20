@@ -17,7 +17,11 @@ func main() {
 	logger.Info("listen=[%v]", addr)
 
 	r := gin.New()
-	r.Use(candy.WebsocketMiddleware(), api.LoginMiddleware())
+	r.Use(candy.WebsocketMiddleware(), api.LoginMiddleware(), api.AdminMiddleware())
+
+	admin := r.Group("/api/admin")
+	admin.POST("/addUser", api.AdminAddUser)
+	admin.POST("/openRegister", api.AdminOpenRegister)
 
 	user := r.Group("/api/user")
 	user.POST("/register", api.UserRegister)

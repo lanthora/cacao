@@ -5,11 +5,15 @@ import (
 )
 
 func TestSetGetString(t *testing.T) {
-	if got, ok := GetString("key"); ok {
-		t.Fatalf(`GetString("key"") = %v, %v, want %v %v`, got, ok, "", false)
+	if got := GetConfig("key", "default"); got != "default" {
+		t.Fatalf(`GetString("key") = %v, want %v`, got, "default")
 	}
-	SetString("key", "value")
-	if got, ok := GetString("key"); !ok || got != "value" {
-		t.Fatalf(`GetString("key"") = %v, %v, want %v %v`, got, ok, "value", true)
+	SetConfig("key", "value")
+	if got := GetConfig("key", "default"); got != "value" {
+		t.Fatalf(`GetString("key") = %v, want %v`, got, "value")
+	}
+	DelConfig("key")
+	if got := GetConfig("key", "default"); got != "default" {
+		t.Fatalf(`GetString("key") = %v, want %v`, got, "default")
 	}
 }

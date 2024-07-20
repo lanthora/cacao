@@ -25,38 +25,25 @@ func (c *Config) Save() {
 	db.Save(c)
 }
 
-func SetString(key string, value string) {
+func SetConfig(key string, value string) {
 	db := storage.Get()
 	config := &Config{Key: key}
-	db.Take(config)
+	db.Where(config).Take(config)
 	config.Value = value
 	config.Save()
 }
 
-func GetString(key string) (value string, ok bool) {
+func GetConfig(key string, defaultValue string) string {
 	db := storage.Get()
 	config := &Config{Key: key}
-
 	if result := db.Where(config).Take(config); result.Error == nil {
-		value = config.Value
-		ok = true
+		return config.Value
 	}
-
-	return
+	return defaultValue
 }
 
-func SetBool(key string, value bool) {
-	SetString(key, func() string {
-		if value {
-			return "true"
-		}
-		return "false"
-	}())
-}
-
-func GetBool(key string) (value bool, ok bool) {
-	if v, ok := GetString(key); ok {
-		return v == "true", true
-	}
-	return
+func DelConfig(key string) {
+	db := storage.Get()
+	config := &Config{Key: key}
+	db.Where(config).Delete(config)
 }

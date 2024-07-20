@@ -53,6 +53,11 @@ func LoginMiddleware() gin.HandlerFunc {
 }
 
 func UserRegister(c *gin.Context) {
+	if model.GetConfig("openreg", "true") != "true" {
+		status.UpdateCode(c, status.RegistrationDisabled)
+		return
+	}
+
 	var request struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
@@ -118,6 +123,10 @@ func UserRegister(c *gin.Context) {
 		"name": user.Name,
 		"role": user.Role,
 	})
+
+	if role == "admin" {
+		model.SetConfig("openreg", "false")
+	}
 
 	if role == "normal" {
 		modelNet := &model.Net{
