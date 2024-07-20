@@ -57,7 +57,6 @@ func AdminAddUser(c *gin.Context) {
 		Password: candy.Sha256sum([]byte(request.Password)),
 		Token:    uuid.NewString(),
 		Role:     "normal",
-		IP:       c.ClientIP(),
 	}
 
 	if result := db.Create(&user); result.Error != nil {

@@ -163,6 +163,10 @@ func UserLogin(c *gin.Context) {
 		return
 	}
 
+	if len(user.IP) == 0 {
+		user.IP = c.ClientIP()
+	}
+
 	user.Token = uuid.NewString()
 	user.Save()
 
