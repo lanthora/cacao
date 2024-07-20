@@ -125,10 +125,7 @@ func (ws *candysocket) handlePingMessage(buffer string) error {
 	ws.updateReadDeadline()
 
 	err := func() error {
-		ws.net.ipWsMapMutex.RLock()
-		defer ws.net.ipWsMapMutex.RUnlock()
-
-		if ws.dev.model == nil {
+		if ws.dev == nil {
 			return fmt.Errorf("ping failed: the client is not logged in: %v", buffer)
 		}
 
