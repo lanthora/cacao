@@ -33,7 +33,7 @@ func AdminAddUser(c *gin.Context) {
 		status.UpdateCode(c, status.InvalidRequest)
 		return
 	}
-	if len(request.Username) < 3 || !candy.IsAlphanumeric(request.Username) {
+	if isInvalidUsername(request.Username) {
 		status.UpdateCode(c, status.InvalidUsername)
 		return
 	}

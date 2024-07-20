@@ -21,6 +21,8 @@ func init() {
 	statusMessage[NetworkNotExists] = "network not exists"
 	statusMessage[AdminAccessRequired] = "admin access required"
 	statusMessage[RegistrationDisabled] = "registration disabled"
+	statusMessage[InvalidNetname] = "invalid net name"
+	statusMessage[InvalidDhcp] = "invalid dhcp"
 }
 
 const (
@@ -37,6 +39,8 @@ const (
 	NetworkNotExists
 	AdminAccessRequired
 	RegistrationDisabled
+	InvalidNetname
+	InvalidDhcp
 )
 
 var statusMessage map[int]string
