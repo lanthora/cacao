@@ -22,6 +22,7 @@ func main() {
 	user := r.Group("/api/user")
 	user.POST("/register", api.UserRegister)
 	user.POST("/login", api.UserLogin)
+	user.POST("/changePassword", api.ChangePassword)
 	user.POST("/logout", api.UserLogout)
 
 	net := r.Group("/api/net")
