@@ -1,6 +1,7 @@
 package api
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -80,7 +81,7 @@ func AdminAddUser(c *gin.Context) {
 	candy.InsertNet(modelNet)
 }
 
-func AdminOpenRegister(c *gin.Context) {
+func AdminSetOpenRegisterConfig(c *gin.Context) {
 	var request struct {
 		OpenReg bool `json:"openreg"`
 	}
@@ -93,5 +94,18 @@ func AdminOpenRegister(c *gin.Context) {
 	} else {
 		model.SetConfig("openreg", "false")
 	}
+	status.UpdateSuccess(c, nil)
+}
+
+func AdminSetRegisterIntervalConfig(c *gin.Context) {
+	var request struct {
+		RegInterval uint `json:"reginterval"`
+	}
+	if err := c.BindJSON(&request); err != nil {
+		status.UpdateCode(c, status.InvalidRequest)
+		return
+	}
+
+	model.SetConfig("reginterval", strconv.FormatUint(uint64(request.RegInterval), 10))
 	status.UpdateSuccess(c, nil)
 }
