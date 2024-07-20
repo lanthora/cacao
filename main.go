@@ -21,7 +21,8 @@ func main() {
 
 	admin := r.Group("/api/admin")
 	admin.POST("/addUser", api.AdminAddUser)
-	admin.POST("/openRegister", api.AdminOpenRegister)
+	admin.POST("/setOpenRegisterConfig", api.AdminSetOpenRegisterConfig)
+	admin.POST("/setRegisterIntervalConfig", api.AdminSetRegisterIntervalConfig)
 
 	user := r.Group("/api/user")
 	user.POST("/register", api.UserRegister)

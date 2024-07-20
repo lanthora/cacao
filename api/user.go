@@ -78,7 +78,7 @@ func UserRegister(c *gin.Context) {
 	db := storage.Get()
 	if func() bool {
 		count := int64(0)
-		db.Model(&model.User{}).Where(&model.User{IP: c.ClientIP(), Role: "normal"}).Where("created_at > ?", time.Now().Add(-24*time.Hour)).Count(&count)
+		db.Model(&model.User{}).Where(&model.User{IP: c.ClientIP(), Role: "normal"}).Where("created_at > ?", time.Now().Add(-1*registerInterval())).Count(&count)
 		return count > 0
 	}() {
 		status.UpdateCode(c, status.RegisterTooFrequently)
@@ -227,4 +227,13 @@ func isInvalidUsername(username string) bool {
 		return true
 	}
 	return false
+}
+
+func registerInterval() time.Duration {
+	intervalStr := model.GetConfig("reginterval", "1440")
+	interval, err := strconv.Atoi(intervalStr)
+	if err != nil {
+		interval = 1440
+	}
+	return time.Duration(interval)
 }
