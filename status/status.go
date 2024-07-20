@@ -19,6 +19,8 @@ func init() {
 	statusMessage[UsernameOrPasswordIncorrect] = "username or password is incorret"
 	statusMessage[NetworkAlreadyExists] = "network already exists"
 	statusMessage[NetworkNotExists] = "network not exists"
+	statusMessage[AdminAccessRequired] = "admin access required"
+	statusMessage[RegistrationDisabled] = "registration disabled"
 }
 
 const (
@@ -33,6 +35,8 @@ const (
 	UsernameOrPasswordIncorrect
 	NetworkAlreadyExists
 	NetworkNotExists
+	AdminAccessRequired
+	RegistrationDisabled
 )
 
 var statusMessage map[int]string
