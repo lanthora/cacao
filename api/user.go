@@ -176,3 +176,35 @@ func UserLogout(c *gin.Context) {
 
 	status.UpdateSuccess(c, nil)
 }
+
+func ChangePassword(c *gin.Context) {
+	var request struct {
+		OldPassword string `json:"old"`
+		NewPassword string `json:"new"`
+	}
+
+	if err := c.BindJSON(&request); err != nil {
+		status.UpdateCode(c, status.InvalidRequest)
+		return
+	}
+
+	user := c.MustGet("user").(*model.User)
+
+	if user.Password != candy.Sha256sum([]byte(request.OldPassword)) {
+		status.UpdateCode(c, status.UsernameOrPasswordIncorrect)
+		return
+	}
+	if len(request.NewPassword) == 0 {
+		status.UpdateCode(c, status.InvalidPassword)
+		return
+	}
+
+	user.Password = candy.Sha256sum([]byte(request.NewPassword))
+	user.Token = uuid.NewString()
+	user.Save()
+
+	c.SetCookie("id", strconv.FormatUint(uint64(user.ID), 10), 86400, "/", "", false, true)
+	c.SetCookie("token", user.Token, 86400, "/", "", false, true)
+
+	status.UpdateSuccess(c, nil)
+}
