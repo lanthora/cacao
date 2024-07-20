@@ -1,6 +1,8 @@
 package api
 
 import (
+	"net"
+
 	"github.com/gin-gonic/gin"
 	"github.com/lanthora/cacao/candy"
 	"github.com/lanthora/cacao/model"
@@ -15,7 +17,7 @@ func NetShow(c *gin.Context) {
 
 	type netinfo struct {
 		ID        uint   `json:"netid"`
-		Name      string `json:"netname"`
+		Netname   string `json:"netname"`
 		Password  string `json:"password"`
 		DHCP      string `json:"dhcp"`
 		Broadcast bool   `json:"broadcast"`
@@ -25,7 +27,7 @@ func NetShow(c *gin.Context) {
 	for _, n := range nets {
 		response = append(response, netinfo{
 			ID:        n.ID,
-			Name:      n.Name,
+			Netname:   n.Name,
 			Password:  n.Password,
 			DHCP:      n.DHCP,
 			Broadcast: n.Broadcast,
@@ -39,7 +41,7 @@ func NetShow(c *gin.Context) {
 
 func NetInsert(c *gin.Context) {
 	var request struct {
-		Name      string `json:"netname"`
+		Netname   string `json:"netname"`
 		Password  string `json:"password"`
 		DHCP      string `json:"dhcp"`
 		Broadcast bool   `json:"broadcast"`
@@ -50,10 +52,15 @@ func NetInsert(c *gin.Context) {
 		return
 	}
 
+	if len(request.Netname) < 3 || len(request.Netname) > 32 || !candy.IsAlphanumeric(request.Netname) {
+		status.UpdateCode(c, status.InvalidNetname)
+		return
+	}
+
 	user := c.MustGet("user").(*model.User)
 	modelNet := &model.Net{
 		UserID: user.ID,
-		Name:   request.Name,
+		Name:   request.Netname,
 	}
 
 	db := storage.Get()
@@ -81,7 +88,7 @@ func NetInsert(c *gin.Context) {
 func NetEdit(c *gin.Context) {
 	var request struct {
 		ID        uint   `json:"netid"`
-		Name      string `json:"netname"`
+		Netname   string `json:"netname"`
 		Password  string `json:"password"`
 		DHCP      string `json:"dhcp"`
 		Broadcast bool   `json:"broadcast"`
@@ -89,6 +96,15 @@ func NetEdit(c *gin.Context) {
 
 	if err := c.BindJSON(&request); err != nil {
 		status.UpdateCode(c, status.InvalidRequest)
+		return
+	}
+
+	if len(request.Netname) < 3 || len(request.Netname) > 32 || !candy.IsAlphanumeric(request.Netname) {
+		status.UpdateCode(c, status.InvalidNetname)
+		return
+	}
+	if _, _, err := net.ParseCIDR(request.DHCP); err != nil {
+		status.UpdateCode(c, status.InvalidDhcp)
 		return
 	}
 
@@ -103,7 +119,7 @@ func NetEdit(c *gin.Context) {
 		return
 	}
 
-	modelNet.Name = request.Name
+	modelNet.Name = request.Netname
 	modelNet.Password = request.Password
 	modelNet.DHCP = request.DHCP
 	modelNet.Broadcast = request.Broadcast
