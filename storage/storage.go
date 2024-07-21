@@ -11,8 +11,6 @@ import (
 	gormlogger "gorm.io/gorm/logger"
 )
 
-var db *gorm.DB
-
 func init() {
 	storageDir := argp.Get("storage", ".")
 	err := os.MkdirAll(storageDir, os.ModeDir|os.ModePerm)
@@ -28,6 +26,8 @@ func init() {
 
 	logger.Info("storage=[%v]", storageDir)
 }
+
+var db *gorm.DB
 
 func Get() *gorm.DB {
 	return db

@@ -8,18 +8,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var logger *logrus.Logger
-
-type logFormatter struct{}
-
-func (f *logFormatter) Format(entry *logrus.Entry) ([]byte, error) {
-	b := &bytes.Buffer{}
-	timestamp := entry.Time.Format("2006-01-02 15:04:05")
-	msg := fmt.Sprintf("[%s] [%s] %s\n", timestamp, entry.Level, entry.Message)
-	b.WriteString(msg)
-	return b.Bytes(), nil
-}
-
 func init() {
 	logger = logrus.New()
 	logger.SetReportCaller(true)
@@ -33,6 +21,18 @@ func init() {
 	}
 
 	Info("loglevel=[%v]", logger.GetLevel().String())
+}
+
+var logger *logrus.Logger
+
+type logFormatter struct{}
+
+func (f *logFormatter) Format(entry *logrus.Entry) ([]byte, error) {
+	b := &bytes.Buffer{}
+	timestamp := entry.Time.Format("2006-01-02 15:04:05")
+	msg := fmt.Sprintf("[%s] [%s] %s\n", timestamp, entry.Level, entry.Message)
+	b.WriteString(msg)
+	return b.Bytes(), nil
 }
 
 func Fatal(format string, args ...interface{}) {
