@@ -44,6 +44,12 @@ func GetNets() (nets []Net) {
 	return
 }
 
+func GetNetByNetID(netid uint) (net Net) {
+	db := storage.Get()
+	db.Where(&Net{Model: gorm.Model{ID: netid}}).Take(&net)
+	return
+}
+
 func GetNetsByUserID(userid uint) (nets []Net) {
 	db := storage.Get()
 	db.Where(&Net{UserID: userid}).Find(&nets)

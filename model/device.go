@@ -35,3 +35,9 @@ func (d *Device) Save() {
 		db.Model(d).Select("*").Updates(d)
 	}
 }
+
+func GetDevicesByNetID(netid uint) (devices []Device) {
+	db := storage.Get()
+	db.Where(&Device{NetID: netid}).Find(&devices)
+	return
+}
