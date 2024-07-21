@@ -5,6 +5,7 @@ import (
 	"github.com/lanthora/cacao/api"
 	"github.com/lanthora/cacao/argp"
 	"github.com/lanthora/cacao/candy"
+	"github.com/lanthora/cacao/frontend"
 	"github.com/lanthora/cacao/logger"
 )
 
@@ -38,6 +39,8 @@ func main() {
 
 	device := r.Group("/api/device")
 	device.POST("/show", api.DeviceShow)
+
+	r.NoRoute(frontend.Static)
 
 	if err := r.Run(addr); err != nil {
 		logger.Fatal("service run failed: %v", err)
