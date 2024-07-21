@@ -52,7 +52,7 @@ func NetInsert(c *gin.Context) {
 		return
 	}
 
-	if len(request.Netname) < 3 || len(request.Netname) > 32 || !candy.IsAlphanumeric(request.Netname) {
+	if isInvalidNetname(request.Netname) {
 		status.UpdateCode(c, status.InvalidNetname)
 		return
 	}
@@ -99,7 +99,7 @@ func NetEdit(c *gin.Context) {
 		return
 	}
 
-	if len(request.Netname) < 3 || len(request.Netname) > 32 || !candy.IsAlphanumeric(request.Netname) {
+	if isInvalidNetname(request.Netname) {
 		status.UpdateCode(c, status.InvalidNetname)
 		return
 	}
@@ -162,4 +162,14 @@ func NetDelete(c *gin.Context) {
 	status.UpdateSuccess(c, gin.H{
 		"id": modelNet.ID,
 	})
+}
+
+func isInvalidNetname(netname string) bool {
+	if netname == "@" {
+		return false
+	}
+	if len(netname) < 3 || len(netname) > 32 || !candy.IsAlphanumeric(netname) {
+		return true
+	}
+	return false
 }
