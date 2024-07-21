@@ -54,6 +54,14 @@ func LoginMiddleware() gin.HandlerFunc {
 	}
 }
 
+func UserInfo(c *gin.Context) {
+	user := c.MustGet("user").(*model.User)
+	status.UpdateSuccess(c, gin.H{
+		"name": user.Name,
+		"role": user.Role,
+	})
+}
+
 func UserRegister(c *gin.Context) {
 	if model.GetConfig("openreg", "true") != "true" {
 		status.UpdateCode(c, status.RegistrationDisabled)
