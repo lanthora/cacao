@@ -29,7 +29,9 @@ type Device struct {
 
 func (d *Device) Save() {
 	db := storage.Get()
-	if result := db.Save(d); result.Error != nil {
-		logger.Debug("save device failed: %v", result.Error)
+	if d.ID == 0 {
+		db.Create(d)
+	} else {
+		db.Model(d).Select("*").Updates(d)
 	}
 }

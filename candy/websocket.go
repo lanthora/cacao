@@ -194,7 +194,7 @@ func (ws *candysocket) handleAuthMessage(buffer []byte) error {
 	ws.net.ipWsMap[message.IP] = ws
 
 	db := storage.Get()
-	db.Where(ws.dev.model).Find(ws.dev.model)
+	db.Where(ws.dev.model).First(ws.dev.model)
 	ws.dev.model.IP = uint32ToStrIP(message.IP)
 	ws.dev.model.Online = true
 	ws.dev.model.Save()
