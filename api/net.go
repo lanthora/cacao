@@ -87,7 +87,7 @@ func NetInsert(c *gin.Context) {
 
 func NetEdit(c *gin.Context) {
 	var request struct {
-		ID        uint   `json:"netid"`
+		NetID     uint   `json:"netid"`
 		Netname   string `json:"netname"`
 		Password  string `json:"password"`
 		DHCP      string `json:"dhcp"`
@@ -109,12 +109,8 @@ func NetEdit(c *gin.Context) {
 	}
 
 	user := c.MustGet("user").(*model.User)
-	modelNet := &model.Net{}
-	modelNet.ID = request.ID
-	db := storage.Get()
-	result := db.Where(modelNet).Take(modelNet)
-
-	if result.Error != nil || modelNet.UserID != user.ID {
+	modelNet := model.GetNetByNetID(request.NetID)
+	if modelNet.UserID != user.ID {
 		status.UpdateCode(c, status.NetworkNotExists)
 		return
 	}
@@ -124,7 +120,7 @@ func NetEdit(c *gin.Context) {
 	modelNet.DHCP = request.DHCP
 	modelNet.Broadcast = request.Broadcast
 	modelNet.Update()
-	candy.UpdateNet(modelNet)
+	candy.UpdateNet(&modelNet)
 
 	status.UpdateSuccess(c, gin.H{
 		"netid":     modelNet.ID,

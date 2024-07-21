@@ -36,6 +36,9 @@ func main() {
 	net.POST("/edit", api.NetEdit)
 	net.POST("/delete", api.NetDelete)
 
+	device := r.Group("/api/device")
+	device.POST("/show", api.DeviceShow)
+
 	if err := r.Run(addr); err != nil {
 		logger.Fatal("service run failed: %v", err)
 	}
