@@ -30,7 +30,7 @@ func (n *Net) Create() {
 
 func (n *Net) Update() {
 	db := storage.Get()
-	db.Updates(n)
+	db.Model(n).Select("*").Updates(n)
 }
 
 func (n *Net) Delete() {
