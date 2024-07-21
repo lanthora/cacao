@@ -1,6 +1,8 @@
 package api
 
 import (
+	"crypto/sha256"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -105,7 +107,7 @@ func UserRegister(c *gin.Context) {
 
 	user := model.User{
 		Name:     request.Username,
-		Password: candy.Sha256sum([]byte(request.Password)),
+		Password: hashUserPassword(request.Username, request.Password),
 		Token:    uuid.NewString(),
 		Role:     role,
 		IP:       c.ClientIP(),
@@ -153,7 +155,7 @@ func UserLogin(c *gin.Context) {
 
 	user := model.User{
 		Name:     request.Username,
-		Password: candy.Sha256sum([]byte(request.Password)),
+		Password: hashUserPassword(request.Username, request.Password),
 	}
 
 	db := storage.Get()
@@ -203,7 +205,7 @@ func ChangePassword(c *gin.Context) {
 
 	user := c.MustGet("user").(*model.User)
 
-	if user.Password != candy.Sha256sum([]byte(request.OldPassword)) {
+	if user.Password != hashUserPassword(user.Name, request.OldPassword) {
 		status.UpdateCode(c, status.UsernameOrPasswordIncorrect)
 		return
 	}
@@ -212,7 +214,7 @@ func ChangePassword(c *gin.Context) {
 		return
 	}
 
-	user.Password = candy.Sha256sum([]byte(request.NewPassword))
+	user.Password = hashUserPassword(user.Name, request.NewPassword)
 	user.Token = uuid.NewString()
 	user.Save()
 
@@ -236,4 +238,9 @@ func registerInterval() time.Duration {
 		interval = 1440
 	}
 	return time.Duration(interval)
+}
+
+func hashUserPassword(username, password string) string {
+	hash := sha256.Sum256([]byte(username + ":" + password))
+	return fmt.Sprintf("%x", hash[:])
 }

@@ -55,7 +55,7 @@ func AdminAddUser(c *gin.Context) {
 
 	user := model.User{
 		Name:     request.Username,
-		Password: candy.Sha256sum([]byte(request.Password)),
+		Password: hashUserPassword(request.Username, request.Password),
 		Token:    uuid.NewString(),
 		Role:     "normal",
 	}
