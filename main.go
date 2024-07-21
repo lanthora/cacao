@@ -26,6 +26,7 @@ func main() {
 	admin.POST("/setRegisterIntervalConfig", api.AdminSetRegisterIntervalConfig)
 
 	user := r.Group("/api/user")
+	user.POST("/info", api.UserInfo)
 	user.POST("/register", api.UserRegister)
 	user.POST("/login", api.UserLogin)
 	user.POST("/changePassword", api.ChangePassword)
