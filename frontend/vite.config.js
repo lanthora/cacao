@@ -11,7 +11,8 @@ export default defineConfig({
     Components({
       resolvers: [
         AntDesignVueResolver({
-          importStyle: false // css in js
+          importStyle: false,
+          resolveIcons: true
         })
       ]
     })
