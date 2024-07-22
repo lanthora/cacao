@@ -1,5 +1,7 @@
 <template>
-  <a-spin />
+  <div class="container">
+    <a-spin />
+  </div>
 </template>
 
 <script setup>
@@ -28,3 +30,12 @@ const userInfo = async () => {
   }
 }
 </script>
+
+<style scoped>
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+</style>
