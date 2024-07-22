@@ -1,30 +1,40 @@
 <template>
   <div class="container">
-    <a-spin />
+    <LoadingView v-if="showLoading()"></LoadingView>
+    <UserView v-if="showUser()"></UserView>
+    <AdminView v-if="showAdmin()"></AdminView>
   </div>
 </template>
 
 <script setup>
 import axios from 'axios'
-import { onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
+const component = ref('loading')
 
 onMounted(() => {
   userInfo()
 })
 
+const showLoading = () => {
+  return !showUser() && !showAdmin()
+}
+
+const showUser = () => {
+  return component.value == 'normal'
+}
+
+const showAdmin = () => {
+  return component.value == 'admin'
+}
+
 const userInfo = async () => {
   const response = await axios.post('/api/user/info')
   const status = response.data.status
   if (status == 0) {
-    const role = response.data.data.role
-    if (role == 'admin') {
-      router.push('/admin')
-    } else if (role == 'normal') {
-      router.push('/user')
-    }
+    component.value = response.data.data.role
   } else if (status == 2) {
     router.push('/login')
   }
