@@ -27,3 +27,9 @@ func (u *User) Save() {
 	db := storage.Get()
 	db.Save(u)
 }
+
+func GetUsers() (users []User) {
+	db := storage.Get()
+	db.Find(&users)
+	return
+}
