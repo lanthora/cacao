@@ -34,6 +34,10 @@ func AdminShowUsers(c *gin.Context) {
 		Username string `json:"username"`
 		Role     string `json:"role"`
 		RegTime  string `json:"regtime"`
+		NetNum   uint   `json:"netnum"`
+		DevNum   uint   `json:"devnum"`
+		RxSum    uint64 `json:"rxsum"`
+		TxSum    uint64 `json:"txsum"`
 	}
 
 	response := make([]userinfo, 0)
@@ -43,6 +47,10 @@ func AdminShowUsers(c *gin.Context) {
 			Username: u.Name,
 			Role:     u.Role,
 			RegTime:  u.CreatedAt.Format(time.DateTime),
+			NetNum:   uint(len(model.GetNetsByUserID(u.ID))),
+			DevNum:   uint(len(model.GetDevicesByUserID(u.ID))),
+			RxSum:    model.GetRxSumByUserID(u.ID),
+			TxSum:    model.GetTxSumByUserID(u.ID),
 		})
 	}
 

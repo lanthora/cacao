@@ -305,7 +305,6 @@ func (ws *candysocket) handleDHCPMessage(buffer []byte) error {
 
 	var oldHost = ws.net.host
 	for needGenNewAddr {
-
 		result := db.Where(&model.Device{NetID: ws.net.model.ID, IP: ws.net.updateHost()})
 		if result.RowsAffected == 0 {
 			break
