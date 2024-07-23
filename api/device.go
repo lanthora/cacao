@@ -7,23 +7,12 @@ import (
 )
 
 func DeviceShow(c *gin.Context) {
-	var request struct {
-		NetID uint `json:"netid"`
-	}
-	if err := c.BindJSON(&request); err != nil {
-		status.UpdateCode(c, status.InvalidRequest)
-		return
-	}
 	user := c.MustGet("user").(*model.User)
-	net := model.GetNetByNetID(request.NetID)
-	if net.UserID != user.ID {
-		status.UpdateCode(c, status.NetworkNotExists)
-		return
-	}
-	devices := model.GetDevicesByNetID(net.ID)
+	devices := model.GetDevicesByUserID(user.ID)
 
 	type devinfo struct {
 		DevID    uint   `json:"devid"`
+		NetID    uint   `json:"netid"`
 		IP       string `json:"ip"`
 		Online   bool   `json:"online"`
 		RX       uint64 `json:"rx"`
@@ -37,6 +26,7 @@ func DeviceShow(c *gin.Context) {
 	for _, d := range devices {
 		response = append(response, devinfo{
 			DevID:    d.ID,
+			NetID:    d.NetID,
 			IP:       d.IP,
 			Online:   d.Online,
 			RX:       d.RX,

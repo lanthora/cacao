@@ -41,3 +41,9 @@ func GetDevicesByNetID(netid uint) (devices []Device) {
 	db.Where(&Device{NetID: netid}).Find(&devices)
 	return
 }
+
+func GetDevicesByUserID(userid uint) (devices []Device) {
+	db := storage.Get()
+	db.Model(&Device{}).Joins("left join nets on devices.net_id = nets.id").Where("nets.user_id = ?", userid).Find(&devices)
+	return
+}
