@@ -59,6 +59,6 @@ func GetNetsByUserID(userid uint) (nets []Net) {
 func GetNetIdByUsernameAndNetname(username, netname string) uint {
 	netid := uint(0)
 	db := storage.Get()
-	db.Model(&Net{}).Select("nets.id").Joins("left join users on users.id = nets.user_id").Where("users.name=? and nets.name = ?", username, netname).Take(&netid)
+	db.Model(&Net{}).Select("nets.id").Joins("left join users on users.id = nets.user_id").Where("users.name = ? and nets.name = ?", username, netname).Take(&netid)
 	return netid
 }
