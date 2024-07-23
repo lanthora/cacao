@@ -10,7 +10,7 @@
       <a-form-item name="username" :rules="[{ required: true, message: 'Input your username' }]">
         <a-input v-model:value="formState.username">
           <template #prefix>
-            <UserOutlined class="site-form-item-icon" />
+            <user-outlined class="site-form-item-icon" />
           </template>
         </a-input>
       </a-form-item>
@@ -18,7 +18,7 @@
       <a-form-item name="password" :rules="[{ required: true, message: 'Input your password' }]">
         <a-input-password v-model:value="formState.password">
           <template #prefix>
-            <LockOutlined class="site-form-item-icon" />
+            <lock-outlined class="site-form-item-icon" />
           </template>
         </a-input-password>
       </a-form-item>

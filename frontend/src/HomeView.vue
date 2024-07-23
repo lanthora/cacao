@@ -1,9 +1,7 @@
 <template>
-  <div class="container">
-    <LoadingView v-if="showLoading()"></LoadingView>
-    <UserView v-if="showUser()"></UserView>
-    <AdminView v-if="showAdmin()"></AdminView>
-  </div>
+  <LoadingView v-if="showLoading()" class="container"></LoadingView>
+  <UserView v-if="showUser()"></UserView>
+  <AdminView v-if="showAdmin()"></AdminView>
 </template>
 
 <script setup>
