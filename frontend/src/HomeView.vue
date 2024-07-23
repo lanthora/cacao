@@ -6,13 +6,13 @@
 
 <script setup>
 import axios from 'axios'
-import { ref, onBeforeMount } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const component = ref('loading')
 
-onBeforeMount(() => {
+onMounted(() => {
   userInfo()
 })
 
