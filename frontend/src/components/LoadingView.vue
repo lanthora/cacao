@@ -1,3 +1,3 @@
 <template>
-  <a-spin />
+  <a-spin size="large" />
 </template>
