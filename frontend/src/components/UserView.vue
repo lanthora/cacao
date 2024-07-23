@@ -20,7 +20,7 @@
           <span class="nav-text">Network</span>
         </a-menu-item>
         <a-menu-item key="route">
-          <radar-chart-outlined />
+          <thunderbolt-outlined />
           <span class="nav-text">Route</span>
         </a-menu-item>
         <a-menu-item key="device">

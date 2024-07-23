@@ -54,7 +54,7 @@ const userLogin = async (username, password) => {
 
   const status = response.data.status
   if (status == 0) {
-    router.back()
+    router.push('/')
   }
 }
 
