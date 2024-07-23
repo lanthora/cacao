@@ -9,37 +9,37 @@ import (
 func init() {
 	statusMessage = make(map[int]string)
 	statusMessage[Success] = "success"
-	statusMessage[Unexpected] = "unexpected"
+	statusMessage[UnexpectedError] = "unexpected error"
 	statusMessage[NotLoggedIn] = "not logged in"
-	statusMessage[InvalidRequest] = "invalid request "
+	statusMessage[InvalidRequest] = "invalid request"
 	statusMessage[InvalidUsername] = "invalid username"
 	statusMessage[InvalidPassword] = "invalid password"
-	statusMessage[RegisterTooFrequently] = "register too frequently"
+	statusMessage[RegisterTooOften] = "register too often"
 	statusMessage[UsernameAlreadyTaken] = "username already taken"
-	statusMessage[UsernameOrPasswordIncorrect] = "username or password is incorret"
+	statusMessage[IncorrectUsernameOrPassword] = "incorrect username or password"
 	statusMessage[NetworkAlreadyExists] = "network already exists"
-	statusMessage[NetworkNotExists] = "network not exists"
+	statusMessage[NetworkDoesNotExists] = "network does not exist"
 	statusMessage[AdminAccessRequired] = "admin access required"
 	statusMessage[RegistrationDisabled] = "registration disabled"
-	statusMessage[InvalidNetname] = "invalid net name"
+	statusMessage[InvalidNetworkName] = "invalid network name"
 	statusMessage[InvalidDhcp] = "invalid dhcp"
 }
 
 const (
 	Success int = iota
-	Unexpected
+	UnexpectedError
 	NotLoggedIn
 	InvalidRequest
 	InvalidUsername
 	InvalidPassword
-	RegisterTooFrequently
+	RegisterTooOften
 	UsernameAlreadyTaken
-	UsernameOrPasswordIncorrect
+	IncorrectUsernameOrPassword
 	NetworkAlreadyExists
-	NetworkNotExists
+	NetworkDoesNotExists
 	AdminAccessRequired
 	RegistrationDisabled
-	InvalidNetname
+	InvalidNetworkName
 	InvalidDhcp
 )
 
@@ -55,7 +55,7 @@ func UpdateSuccess(c *gin.Context, data gin.H) {
 
 func UpdateUnexpected(c *gin.Context, msg string) {
 	c.JSON(http.StatusOK, gin.H{
-		"status": Unexpected,
+		"status": UnexpectedError,
 		"msg":    msg,
 	})
 }

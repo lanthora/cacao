@@ -91,7 +91,7 @@ func UserRegister(c *gin.Context) {
 		db.Model(&model.User{}).Where(&model.User{IP: c.ClientIP(), Role: "normal"}).Where("created_at > ?", time.Now().Add(-1*registerInterval())).Count(&count)
 		return count > 0
 	}() {
-		status.UpdateCode(c, status.RegisterTooFrequently)
+		status.UpdateCode(c, status.RegisterTooOften)
 		return
 	}
 
@@ -169,7 +169,7 @@ func UserLogin(c *gin.Context) {
 	db := storage.Get()
 
 	if result := db.Where(user).Take(&user); result.Error != nil {
-		status.UpdateCode(c, status.UsernameOrPasswordIncorrect)
+		status.UpdateCode(c, status.IncorrectUsernameOrPassword)
 		return
 	}
 
@@ -214,7 +214,7 @@ func ChangePassword(c *gin.Context) {
 	user := c.MustGet("user").(*model.User)
 
 	if user.Password != hashUserPassword(user.Name, request.OldPassword) {
-		status.UpdateCode(c, status.UsernameOrPasswordIncorrect)
+		status.UpdateCode(c, status.IncorrectUsernameOrPassword)
 		return
 	}
 	if len(request.NewPassword) == 0 {
