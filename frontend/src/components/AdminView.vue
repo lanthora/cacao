@@ -1,12 +1,6 @@
 <template>
-  <a-layout>
-    <a-layout-sider
-      breakpoint="lg"
-      collapsed-width="0"
-      @collapse="onCollapse"
-      @breakpoint="onBreakpoint"
-      :style="{ height: '98vh' }"
-    >
+  <a-layout style="min-height: 98vh">
+    <a-layout-sider breakpoint="lg" collapsed-width="0">
       <div class="logo">
         <a-avatar src="/favicon.ico" />
       </div>
@@ -31,12 +25,7 @@
 
 <script setup>
 import { ref } from 'vue'
-const onCollapse = (collapsed, type) => {
-  console.log(collapsed, type)
-}
-const onBreakpoint = (broken) => {
-  console.log(broken)
-}
+
 const selectedKeys = ref(['user'])
 
 const showUserManagement = () => {

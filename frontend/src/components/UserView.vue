@@ -1,6 +1,6 @@
 <template>
-  <a-layout>
-    <a-layout-sider breakpoint="lg" collapsed-width="0" :style="{ height: '98vh' }">
+  <a-layout style="min-height: 98vh">
+    <a-layout-sider breakpoint="lg" collapsed-width="0">
       <div class="logo">
         <a-avatar src="/favicon.ico" />
       </div>

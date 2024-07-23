@@ -3,7 +3,7 @@
     <a-page-header
       style="border: 1px solid rgb(235, 237, 240)"
       title="Setting"
-      sub-title="configs that can only be modified by admin"
+      sub-title="system configuration"
     />
   </a-layout-header>
   <a-layout-content :style="{ margin: '24px 16px 0' }">
