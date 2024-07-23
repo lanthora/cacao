@@ -22,17 +22,9 @@
       </a-menu>
     </a-layout-sider>
     <a-layout>
-      <a-layout-header :style="{ background: '#fff', padding: 0 }">
-        <a-page-header
-          style="border: 1px solid rgb(235, 237, 240)"
-          title="Title"
-          sub-title="Sub Title"
-        />
-      </a-layout-header>
-      <a-layout-content :style="{ margin: '24px 16px 0' }">
-        <div :style="{ padding: '24px', background: '#fff', minHeight: '360px' }">content</div>
-      </a-layout-content>
-      <a-layout-footer style="text-align: center"> Cacao ©2024 Created by Canets </a-layout-footer>
+      <UserManagementView v-if="showUserManagement()"></UserManagementView>
+      <SettingView v-if="showSetting()"></SettingView>
+      <a-layout-footer style="text-align: center">Cacao © 2024</a-layout-footer>
     </a-layout>
   </a-layout>
 </template>
@@ -46,6 +38,14 @@ const onBreakpoint = (broken) => {
   console.log(broken)
 }
 const selectedKeys = ref(['user'])
+
+const showUserManagement = () => {
+  return selectedKeys.value.includes('user')
+}
+
+const showSetting = () => {
+  return selectedKeys.value.includes('setting')
+}
 </script>
 
 <style scoped>

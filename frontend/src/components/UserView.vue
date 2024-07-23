@@ -1,12 +1,6 @@
 <template>
   <a-layout>
-    <a-layout-sider
-      breakpoint="lg"
-      collapsed-width="0"
-      @collapse="onCollapse"
-      @breakpoint="onBreakpoint"
-      :style="{ height: '98vh' }"
-    >
+    <a-layout-sider breakpoint="lg" collapsed-width="0" :style="{ height: '98vh' }">
       <div class="logo">
         <a-avatar src="/favicon.ico" />
       </div>
@@ -15,45 +9,46 @@
           <user-outlined />
           <span class="nav-text">User</span>
         </a-menu-item>
-        <a-menu-item key="network">
-          <apartment-outlined />
-          <span class="nav-text">Network</span>
-        </a-menu-item>
-        <a-menu-item key="route">
-          <thunderbolt-outlined />
-          <span class="nav-text">Route</span>
-        </a-menu-item>
         <a-menu-item key="device">
           <desktop-outlined />
           <span class="nav-text">Device</span>
         </a-menu-item>
+        <a-menu-item key="network">
+          <apartment-outlined />
+          <span class="nav-text">Network</span>
+        </a-menu-item>
+        <a-menu-item key="sdwan">
+          <thunderbolt-outlined />
+          <span class="nav-text">SD-WAN</span>
+        </a-menu-item>
       </a-menu>
     </a-layout-sider>
     <a-layout>
-      <a-layout-header :style="{ background: '#fff', padding: 0 }">
-        <a-page-header
-          style="border: 1px solid rgb(235, 237, 240)"
-          title="Title"
-          sub-title="Sub Title"
-        />
-      </a-layout-header>
-      <a-layout-content :style="{ margin: '24px 16px 0' }">
-        <div :style="{ padding: '24px', background: '#fff', minHeight: '360px' }">content</div>
-      </a-layout-content>
-      <a-layout-footer style="text-align: center"> Cacao ©2024 Created by Canets </a-layout-footer>
+      <UserInfoView v-if="showUserInfo()"></UserInfoView>
+      <DeviceView v-if="showDevice()"></DeviceView>
+      <NetworkView v-if="showNetwork()"></NetworkView>
+      <SdwanView v-if="showSdwan()"></SdwanView>
+      <a-layout-footer style="text-align: center">Cacao © 2024</a-layout-footer>
     </a-layout>
   </a-layout>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-const onCollapse = (collapsed, type) => {
-  console.log(collapsed, type)
-}
-const onBreakpoint = (broken) => {
-  console.log(broken)
-}
 const selectedKeys = ref(['user'])
+
+const showUserInfo = () => {
+  return selectedKeys.value.includes('user')
+}
+const showDevice = () => {
+  return selectedKeys.value.includes('device')
+}
+const showNetwork = () => {
+  return selectedKeys.value.includes('network')
+}
+const showSdwan = () => {
+  return selectedKeys.value.includes('sdwan')
+}
 </script>
 
 <style scoped>
