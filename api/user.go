@@ -245,7 +245,7 @@ func registerInterval() time.Duration {
 	if err != nil {
 		interval = 1440
 	}
-	return time.Duration(interval)
+	return time.Duration(interval) * time.Minute
 }
 
 func hashUserPassword(username, password string) string {
