@@ -3,6 +3,7 @@ package api
 import (
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -23,6 +24,31 @@ func AdminMiddleware() gin.HandlerFunc {
 		}
 		c.Next()
 	}
+}
+
+func AdminShowUsers(c *gin.Context) {
+	users := model.GetUsers()
+
+	type userinfo struct {
+		UserID   uint   `json:"userid"`
+		Username string `json:"username"`
+		Role     string `json:"role"`
+		RegTime  string `json:"regtime"`
+	}
+
+	response := make([]userinfo, 0)
+	for _, u := range users {
+		response = append(response, userinfo{
+			UserID:   u.ID,
+			Username: u.Name,
+			Role:     u.Role,
+			RegTime:  u.CreatedAt.Format(time.DateTime),
+		})
+	}
+
+	status.UpdateSuccess(c, gin.H{
+		"users": response,
+	})
 }
 
 func AdminAddUser(c *gin.Context) {
@@ -81,6 +107,13 @@ func AdminAddUser(c *gin.Context) {
 	candy.InsertNet(modelNet)
 }
 
+func AdminGetOpenRegisterConfig(c *gin.Context) {
+	openreg := model.GetConfig("openreg", "true") == "true"
+	status.UpdateSuccess(c, gin.H{
+		"openreg": openreg,
+	})
+}
+
 func AdminSetOpenRegisterConfig(c *gin.Context) {
 	var request struct {
 		OpenReg bool `json:"openreg"`
@@ -94,7 +127,18 @@ func AdminSetOpenRegisterConfig(c *gin.Context) {
 	} else {
 		model.SetConfig("openreg", "false")
 	}
-	status.UpdateSuccess(c, nil)
+	status.UpdateSuccess(c, gin.H{})
+}
+
+func AdminGetRegisterIntervalConfig(c *gin.Context) {
+	intervalStr := model.GetConfig("reginterval", "1440")
+	interval, err := strconv.Atoi(intervalStr)
+	if err != nil {
+		interval = 1440
+	}
+	status.UpdateSuccess(c, gin.H{
+		"reginterval": interval,
+	})
 }
 
 func AdminSetRegisterIntervalConfig(c *gin.Context) {
@@ -107,5 +151,5 @@ func AdminSetRegisterIntervalConfig(c *gin.Context) {
 	}
 
 	model.SetConfig("reginterval", strconv.FormatUint(uint64(request.RegInterval), 10))
-	status.UpdateSuccess(c, nil)
+	status.UpdateSuccess(c, gin.H{})
 }

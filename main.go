@@ -21,8 +21,11 @@ func main() {
 	r.Use(candy.WebsocketMiddleware(), api.LoginMiddleware(), api.AdminMiddleware())
 
 	admin := r.Group("/api/admin")
+	admin.POST("/showUsers", api.AdminShowUsers)
 	admin.POST("/addUser", api.AdminAddUser)
+	admin.POST("/getOpenRegisterConfig", api.AdminGetOpenRegisterConfig)
 	admin.POST("/setOpenRegisterConfig", api.AdminSetOpenRegisterConfig)
+	admin.POST("/getRegisterIntervalConfig", api.AdminGetRegisterIntervalConfig)
 	admin.POST("/setRegisterIntervalConfig", api.AdminSetRegisterIntervalConfig)
 
 	user := r.Group("/api/user")
