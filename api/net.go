@@ -53,7 +53,7 @@ func NetInsert(c *gin.Context) {
 	}
 
 	if isInvalidNetname(request.Netname) {
-		status.UpdateCode(c, status.InvalidNetname)
+		status.UpdateCode(c, status.InvalidNetworkName)
 		return
 	}
 
@@ -100,7 +100,7 @@ func NetEdit(c *gin.Context) {
 	}
 
 	if isInvalidNetname(request.Netname) {
-		status.UpdateCode(c, status.InvalidNetname)
+		status.UpdateCode(c, status.InvalidNetworkName)
 		return
 	}
 	if _, _, err := net.ParseCIDR(request.DHCP); err != nil {
@@ -111,7 +111,7 @@ func NetEdit(c *gin.Context) {
 	user := c.MustGet("user").(*model.User)
 	modelNet := model.GetNetByNetID(request.NetID)
 	if modelNet.UserID != user.ID {
-		status.UpdateCode(c, status.NetworkNotExists)
+		status.UpdateCode(c, status.NetworkDoesNotExists)
 		return
 	}
 
@@ -148,7 +148,7 @@ func NetDelete(c *gin.Context) {
 	result := db.Where(modelNet).Take(modelNet)
 
 	if result.Error != nil || modelNet.UserID != user.ID {
-		status.UpdateCode(c, status.NetworkNotExists)
+		status.UpdateCode(c, status.NetworkDoesNotExists)
 		return
 	}
 
