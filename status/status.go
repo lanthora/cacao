@@ -23,6 +23,8 @@ func init() {
 	statusMessage[RegistrationDisabled] = "registration disabled"
 	statusMessage[InvalidNetworkName] = "invalid network name"
 	statusMessage[InvalidDhcp] = "invalid dhcp"
+	statusMessage[UserDoesNotExists] = "user does not exists"
+	statusMessage[CannotDeleteAdmin] = "cannot delete admin"
 }
 
 const (
@@ -41,6 +43,8 @@ const (
 	RegistrationDisabled
 	InvalidNetworkName
 	InvalidDhcp
+	UserDoesNotExists
+	CannotDeleteAdmin
 )
 
 var statusMessage map[int]string

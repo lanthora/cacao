@@ -35,7 +35,7 @@ func (n *Net) Update() {
 
 func (n *Net) Delete() {
 	db := storage.Get()
-	db.Unscoped().Delete(n)
+	db.Delete(n)
 }
 
 func GetNets() (nets []Net) {
@@ -61,4 +61,9 @@ func GetNetIdByUsernameAndNetname(username, netname string) uint {
 	db := storage.Get()
 	db.Model(&Net{}).Select("nets.id").Joins("left join users on users.id = nets.user_id").Where("users.name = ? and nets.name = ?", username, netname).Take(&netid)
 	return netid
+}
+
+func DeleteNetByNetID(netid uint) {
+	db := storage.Get()
+	db.Delete(&Net{Model: gorm.Model{ID: netid}})
 }

@@ -59,3 +59,9 @@ func GetTxSumByUserID(userid uint) (tx uint64) {
 	db.Model(&Device{}).Select("sum(tx)").Joins("left join nets on devices.net_id = nets.id").Where("nets.user_id = ?", userid).Take(&tx)
 	return
 }
+
+func DeleteDevicesByNetID(netid uint) (devices []Device) {
+	db := storage.Get()
+	db.Where(&Device{NetID: netid}).Delete(&Device{})
+	return
+}

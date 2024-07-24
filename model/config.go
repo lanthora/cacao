@@ -16,7 +16,7 @@ func init() {
 
 type Config struct {
 	gorm.Model
-	Key   string `gorm:"uniqueIndex"`
+	Key   string `gorm:"index"`
 	Value string
 }
 
