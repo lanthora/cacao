@@ -40,7 +40,9 @@
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'action'">
             <a-space wrap>
-              <a-button danger size="small" @click="deleteUser(record.userid)"> Delete </a-button>
+              <a-button danger type="primary" size="small" @click="deleteUser(record.userid)">
+                Delete
+              </a-button>
             </a-space>
           </template>
         </template>
