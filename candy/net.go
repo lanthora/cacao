@@ -37,6 +37,15 @@ type Net struct {
 var idNetMap map[uint]*Net
 var idNetMapMutex sync.RWMutex
 
+func Flush() {
+	idNetMapMutex.Lock()
+	defer idNetMapMutex.Unlock()
+
+	for _, n := range idNetMap {
+		n.model.Update()
+	}
+}
+
 func (net *Net) ipConflict(ip, vmac string) bool {
 	db := storage.Get()
 	device := &model.Device{NetID: net.model.ID, IP: ip}
