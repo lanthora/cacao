@@ -115,6 +115,32 @@ func AdminAddUser(c *gin.Context) {
 	candy.InsertNet(modelNet)
 }
 
+func AdminDeleteUser(c *gin.Context) {
+	var request struct {
+		UserID uint `json:"userid"`
+	}
+
+	if err := c.BindJSON(&request); err != nil {
+		status.UpdateCode(c, status.InvalidRequest)
+		return
+	}
+
+	user := c.MustGet("user").(*model.User)
+	if request.UserID == user.ID {
+		status.UpdateCode(c, status.CannotDeleteAdmin)
+		return
+	}
+
+	nets := model.GetNetsByUserID(request.UserID)
+	for _, n := range nets {
+		candy.DeleteNet(n.ID)
+		model.DeleteDevicesByNetID(n.ID)
+		model.DeleteNetByNetID(n.ID)
+	}
+	model.DeleteUserByUserID(request.UserID)
+	status.UpdateSuccess(c, gin.H{})
+}
+
 func AdminGetOpenRegisterConfig(c *gin.Context) {
 	openreg := model.GetConfig("openreg", "true") == "true"
 	status.UpdateSuccess(c, gin.H{

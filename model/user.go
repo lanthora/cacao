@@ -16,7 +16,7 @@ func init() {
 
 type User struct {
 	gorm.Model
-	Name     string `gorm:"uniqueIndex"`
+	Name     string `gorm:"index"`
 	Password string
 	Token    string
 	Role     string
@@ -32,4 +32,9 @@ func GetUsers() (users []User) {
 	db := storage.Get()
 	db.Find(&users)
 	return
+}
+
+func DeleteUserByUserID(userid uint) {
+	db := storage.Get()
+	db.Delete(&User{Model: gorm.Model{ID: userid}})
 }

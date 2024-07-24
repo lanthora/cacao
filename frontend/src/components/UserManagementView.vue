@@ -132,7 +132,14 @@ onMounted(() => {
   updateUserSource()
 })
 
-const deleteUser = (e) => {
-  message.info('delete ' + e)
+const deleteUser = async (e) => {
+  const response = await axios.post('/api/admin/deleteUser', {
+    userid: e
+  })
+
+  const status = response.data.status
+  if (status == 0) {
+    updateUserSource()
+  }
 }
 </script>
