@@ -139,7 +139,36 @@ func AdminDeleteUser(c *gin.Context) {
 		model.DeleteNetByNetID(n.ID)
 	}
 	model.DeleteUserByUserID(request.UserID)
-	status.UpdateSuccess(c, gin.H{})
+	status.UpdateSuccess(c, nil)
+}
+
+func AdminUpdateUserPassword(c *gin.Context) {
+	var request struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
+	if err := c.BindJSON(&request); err != nil {
+		status.UpdateCode(c, status.InvalidRequest)
+		return
+	}
+	if isInvalidUsername(request.Username) {
+		status.UpdateCode(c, status.InvalidUsername)
+		return
+	}
+	if len(request.Password) == 0 {
+		status.UpdateCode(c, status.InvalidPassword)
+		return
+	}
+
+	user := model.User{Name: request.Username}
+	db := storage.Get()
+	if result := db.Model(&model.User{}).Where(user).Take(&user); result.Error != nil {
+		status.UpdateCode(c, status.UnexpectedError)
+		return
+	}
+	user.Password = hashUserPassword(user.Name, request.Password)
+	user.Save()
+	status.UpdateSuccess(c, nil)
 }
 
 func AdminGetOpenRegisterConfig(c *gin.Context) {
@@ -162,7 +191,7 @@ func AdminSetOpenRegisterConfig(c *gin.Context) {
 	} else {
 		model.SetConfig("openreg", "false")
 	}
-	status.UpdateSuccess(c, gin.H{})
+	status.UpdateSuccess(c, nil)
 }
 
 func AdminGetRegisterIntervalConfig(c *gin.Context) {
@@ -186,5 +215,5 @@ func AdminSetRegisterIntervalConfig(c *gin.Context) {
 	}
 
 	model.SetConfig("reginterval", strconv.FormatUint(uint64(request.RegInterval), 10))
-	status.UpdateSuccess(c, gin.H{})
+	status.UpdateSuccess(c, nil)
 }

@@ -6,7 +6,7 @@
       </div>
       <a-menu v-model:selectedKeys="selectedKeys" theme="dark" mode="inline">
         <a-menu-item key="user">
-          <user-outlined />
+          <team-outlined />
           <span class="nav-text">User</span>
         </a-menu-item>
         <a-menu-item key="setting">
@@ -16,8 +16,8 @@
       </a-menu>
     </a-layout-sider>
     <a-layout>
-      <UserManagementView v-if="showUserManagement()"></UserManagementView>
-      <SettingView v-if="showSetting()"></SettingView>
+      <AdminUserView v-if="showUser()"></AdminUserView>
+      <AdminSettingView v-if="showSetting()"></AdminSettingView>
       <a-layout-footer style="text-align: center">Cacao © 2024</a-layout-footer>
     </a-layout>
   </a-layout>
@@ -28,7 +28,7 @@ import { ref } from 'vue'
 
 const selectedKeys = ref(['user'])
 
-const showUserManagement = () => {
+const showUser = () => {
   return selectedKeys.value.includes('user')
 }
 

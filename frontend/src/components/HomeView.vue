@@ -1,6 +1,6 @@
 <template>
   <LoadingView v-if="showLoading()" class="container"></LoadingView>
-  <UserView v-if="showUser()"></UserView>
+  <NormalView v-if="showNormal()"></NormalView>
   <AdminView v-if="showAdmin()"></AdminView>
 </template>
 
@@ -17,10 +17,10 @@ onMounted(() => {
 })
 
 const showLoading = () => {
-  return !showUser() && !showAdmin()
+  return !showNormal() && !showAdmin()
 }
 
-const showUser = () => {
+const showNormal = () => {
   return component.value == 'normal'
 }
 

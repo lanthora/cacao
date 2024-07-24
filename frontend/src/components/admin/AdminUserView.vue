@@ -3,36 +3,39 @@
     <a-page-header title="User" sub-title="user management" />
   </a-layout-header>
   <a-layout-content :style="{ margin: '24px 16px 0' }">
-    <div
-      :style="{
-        padding: '24px',
-        background: '#fff',
-        margin: '0px 0px 24px 0px'
-      }"
-    >
-      <a-form layout="inline" :model="addUserState" @finish="handleFinish">
+    <div :style="{ padding: '24px', background: '#fff' }">
+      <a-form layout="inline" :model="userState">
         <a-form-item>
-          <a-input v-model:value="addUserState.username" placeholder="Username">
+          <a-input v-model:value="userState.username" placeholder="Username">
             <template #prefix><UserOutlined style="color: rgba(0, 0, 0, 0.25)" /></template>
           </a-input>
         </a-form-item>
         <a-form-item>
-          <a-input v-model:value="addUserState.password" type="password" placeholder="Password">
+          <a-input v-model:value="userState.password" type="password" placeholder="Password">
             <template #prefix><LockOutlined style="color: rgba(0, 0, 0, 0.25)" /></template>
           </a-input>
         </a-form-item>
         <a-form-item>
           <a-button
             type="primary"
-            html-type="submit"
-            :disabled="addUserState.username === '' || addUserState.password === ''"
+            @click="adminAddUser"
+            :disabled="userState.username === '' || userState.password === ''"
           >
             Create
           </a-button>
         </a-form-item>
+        <a-form-item>
+          <a-button
+            type="primary"
+            @click="adminUpdateUserPassword"
+            :disabled="userState.username === '' || userState.password === ''"
+          >
+            Update
+          </a-button>
+        </a-form-item>
       </a-form>
     </div>
-    <div :style="{ padding: '24px', background: '#fff' }">
+    <div :style="{ padding: '24px', margin: '24px 0px 0px', background: '#fff' }">
       <a-table :columns="userColumns" :dataSource="userSource">
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'action'">
@@ -51,28 +54,39 @@ import { message } from 'ant-design-vue'
 import axios from 'axios'
 import { onMounted, ref } from 'vue'
 
-const addUserState = ref({
+const userState = ref({
   username: '',
   password: ''
 })
 
-const adminAddUser = async (username, password) => {
+const adminAddUser = async () => {
   const response = await axios.post('/api/admin/addUser', {
-    username: username,
-    password: password
+    username: userState.value.username,
+    password: userState.value.password
   })
 
   const status = response.data.status
   if (status == 0) {
     message.success(response.data.msg)
-    addUserState.value.username = ''
-    addUserState.value.password = ''
+    userState.value.username = ''
+    userState.value.password = ''
     updateUserSource()
   }
 }
 
-const handleFinish = () => {
-  adminAddUser(addUserState.value.username, addUserState.value.password)
+const adminUpdateUserPassword = async () => {
+  const response = await axios.post('/api/admin/updateUserPassword', {
+    username: userState.value.username,
+    password: userState.value.password
+  })
+
+  const status = response.data.status
+  if (status == 0) {
+    message.success(response.data.msg)
+    userState.value.username = ''
+    userState.value.password = ''
+    updateUserSource()
+  }
 }
 
 const userColumns = [
