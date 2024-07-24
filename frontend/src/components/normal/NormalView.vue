@@ -5,9 +5,9 @@
         <a-avatar src="/favicon.ico" />
       </div>
       <a-menu v-model:selectedKeys="selectedKeys" theme="dark" mode="inline">
-        <a-menu-item key="user">
-          <user-outlined />
-          <span class="nav-text">User</span>
+        <a-menu-item key="overview">
+          <bar-chart-outlined />
+          <span class="nav-text">Overview</span>
         </a-menu-item>
         <a-menu-item key="device">
           <desktop-outlined />
@@ -21,13 +21,18 @@
           <thunderbolt-outlined />
           <span class="nav-text">SD-WAN</span>
         </a-menu-item>
+        <a-menu-item key="user">
+          <user-outlined />
+          <span class="nav-text">User</span>
+        </a-menu-item>
       </a-menu>
     </a-layout-sider>
     <a-layout>
-      <UserInfoView v-if="showUserInfo()"></UserInfoView>
+      <OverviewView v-if="showOverview()"></OverviewView>
       <DeviceView v-if="showDevice()"></DeviceView>
       <NetworkView v-if="showNetwork()"></NetworkView>
       <SdwanView v-if="showSdwan()"></SdwanView>
+      <UserView v-if="showUser()"></UserView>
       <a-layout-footer style="text-align: center">Cacao © 2024</a-layout-footer>
     </a-layout>
   </a-layout>
@@ -35,10 +40,11 @@
 
 <script setup>
 import { ref } from 'vue'
-const selectedKeys = ref(['user'])
+import OverviewView from './OverviewView.vue'
+const selectedKeys = ref(['overview'])
 
-const showUserInfo = () => {
-  return selectedKeys.value.includes('user')
+const showOverview = () => {
+  return selectedKeys.value.includes('overview')
 }
 const showDevice = () => {
   return selectedKeys.value.includes('device')
@@ -48,6 +54,9 @@ const showNetwork = () => {
 }
 const showSdwan = () => {
   return selectedKeys.value.includes('sdwan')
+}
+const showUser = () => {
+  return selectedKeys.value.includes('user')
 }
 </script>
 

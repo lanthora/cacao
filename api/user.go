@@ -202,7 +202,7 @@ func UserLogout(c *gin.Context) {
 	c.SetCookie("id", "", -1, "/", "", false, true)
 	c.SetCookie("token", "", -1, "/", "", false, true)
 
-	status.UpdateSuccess(c, gin.H{})
+	status.UpdateSuccess(c, nil)
 }
 
 func ChangePassword(c *gin.Context) {
@@ -234,7 +234,7 @@ func ChangePassword(c *gin.Context) {
 	c.SetCookie("id", strconv.FormatUint(uint64(user.ID), 10), 86400, "/", "", false, true)
 	c.SetCookie("token", user.Token, 86400, "/", "", false, true)
 
-	status.UpdateSuccess(c, gin.H{})
+	status.UpdateSuccess(c, nil)
 }
 
 func isInvalidUsername(username string) bool {

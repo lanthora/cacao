@@ -24,6 +24,7 @@ func main() {
 	admin.POST("/showUsers", api.AdminShowUsers)
 	admin.POST("/addUser", api.AdminAddUser)
 	admin.POST("/deleteUser", api.AdminDeleteUser)
+	admin.POST("/updateUserPassword", api.AdminUpdateUserPassword)
 	admin.POST("/getOpenRegisterConfig", api.AdminGetOpenRegisterConfig)
 	admin.POST("/setOpenRegisterConfig", api.AdminSetOpenRegisterConfig)
 	admin.POST("/getRegisterIntervalConfig", api.AdminGetRegisterIntervalConfig)
