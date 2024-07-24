@@ -57,16 +57,4 @@ const showSdwan = () => {
   margin: 16px;
   text-align: center;
 }
-
-.site-layout-sub-header-background {
-  background: #fff;
-}
-
-.site-layout-background {
-  background: #fff;
-}
-
-[data-theme='dark'] .site-layout-sub-header-background {
-  background: #141414;
-}
 </style>
