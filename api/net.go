@@ -1,8 +1,6 @@
 package api
 
 import (
-	"net"
-
 	"github.com/gin-gonic/gin"
 	"github.com/lanthora/cacao/candy"
 	"github.com/lanthora/cacao/model"
@@ -57,6 +55,11 @@ func NetInsert(c *gin.Context) {
 		return
 	}
 
+	if candy.IsInvalidDHCP(request.DHCP) {
+		status.UpdateCode(c, status.InvalidDhcp)
+		return
+	}
+
 	user := c.MustGet("user").(*model.User)
 	modelNet := &model.Net{
 		UserID: user.ID,
@@ -103,7 +106,8 @@ func NetEdit(c *gin.Context) {
 		status.UpdateCode(c, status.InvalidNetworkName)
 		return
 	}
-	if _, _, err := net.ParseCIDR(request.DHCP); err != nil {
+
+	if candy.IsInvalidDHCP(request.DHCP) {
 		status.UpdateCode(c, status.InvalidDhcp)
 		return
 	}

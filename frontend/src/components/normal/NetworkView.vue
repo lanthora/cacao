@@ -111,7 +111,7 @@ const openNetDialog = (record) => {
   netDialogState.value.netname = record ? record.netname : ''
   netDialogState.value.password = record ? record.password : ''
   netDialogState.value.dhcp = record ? record.dhcp : ''
-  netDialogState.value.broadcast = record && record.broadcast ? 'true' : null
+  netDialogState.value.broadcast = record ? (record.broadcast ? 'true' : 'false') : null
   netDialogOpen.value = true
 }
 
