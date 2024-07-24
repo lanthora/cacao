@@ -57,8 +57,13 @@ func LoginMiddleware() gin.HandlerFunc {
 func UserInfo(c *gin.Context) {
 	user := c.MustGet("user").(*model.User)
 	status.UpdateSuccess(c, gin.H{
-		"name": user.Name,
-		"role": user.Role,
+		"name":    user.Name,
+		"role":    user.Role,
+		"regtime": user.CreatedAt.Format(time.DateTime),
+		"netnum":  uint(len(model.GetNetsByUserID(user.ID))),
+		"devnum":  uint(len(model.GetDevicesByUserID(user.ID))),
+		"rxsum":   model.GetRxSumByUserID(user.ID),
+		"txsum":   model.GetTxSumByUserID(user.ID),
 	})
 }
 

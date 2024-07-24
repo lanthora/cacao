@@ -27,6 +27,7 @@ func AdminMiddleware() gin.HandlerFunc {
 }
 
 func AdminShowUsers(c *gin.Context) {
+	candy.Flush()
 	users := model.GetUsers()
 
 	type userinfo struct {
