@@ -15,7 +15,7 @@ import { onMounted, ref } from 'vue'
 
 const deviceColumns = [
   {
-    title: 'Hostname',
+    title: 'Host Name',
     dataIndex: 'hostname',
     key: 'hostname',
     align: 'center'
