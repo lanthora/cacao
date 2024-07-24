@@ -134,22 +134,28 @@ func (net *Net) Close() {
 	}
 }
 
+func IsInvalidDHCP(cidr string) bool {
+	_, ipNet, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return true
+	}
+	mask := binary.BigEndian.Uint32(ipNet.Mask)
+	return ^mask < 2
+}
+
 func InsertNet(netModel *model.Net) {
 	idNetMapMutex.Lock()
 	defer idNetMapMutex.Unlock()
 
-	_, ipNet, err := net.ParseCIDR(netModel.DHCP)
-	if err != nil {
-		logger.Fatal("insert net failed: %v", err)
+	if IsInvalidDHCP(netModel.DHCP) {
+		logger.Fatal("invalid net cidr: %v", netModel.DHCP)
+		return
 	}
 
+	_, ipNet, _ := net.ParseCIDR(netModel.DHCP)
 	netid := binary.BigEndian.Uint32(ipNet.IP)
 	mask := binary.BigEndian.Uint32(ipNet.Mask)
 	hostid := rand.Uint32() & ^mask
-
-	if ^mask < 2 {
-		logger.Fatal("invalid net cidr: %v", netModel.DHCP)
-	}
 
 	net := &Net{
 		model:   netModel,
