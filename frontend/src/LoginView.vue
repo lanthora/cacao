@@ -1,14 +1,14 @@
 <template>
   <div class="container">
     <a-form
-      :model="formState"
+      :model="loginState"
       :hideRequiredMark="true"
       name="login"
       class="login-form"
       @finish="onFinish"
     >
       <a-form-item name="username" :rules="[{ required: true, message: 'Input your username' }]">
-        <a-input v-model:value="formState.username">
+        <a-input v-model:value="loginState.username">
           <template #prefix>
             <user-outlined class="site-form-item-icon" />
           </template>
@@ -16,7 +16,7 @@
       </a-form-item>
 
       <a-form-item name="password" :rules="[{ required: true, message: 'Input your password' }]">
-        <a-input-password v-model:value="formState.password">
+        <a-input-password v-model:value="loginState.password">
           <template #prefix>
             <lock-outlined class="site-form-item-icon" />
           </template>
@@ -39,7 +39,7 @@ import { reactive, computed } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
 
-const formState = reactive({
+const loginState = reactive({
   username: '',
   password: ''
 })
@@ -63,7 +63,7 @@ const onFinish = (values) => {
 }
 
 const disabled = computed(() => {
-  return !(formState.username && formState.password)
+  return !(loginState.username && loginState.password)
 })
 </script>
 

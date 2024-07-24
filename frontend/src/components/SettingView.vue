@@ -1,13 +1,9 @@
 <template>
   <a-layout-header :style="{ background: '#fff', padding: 0 }">
-    <a-page-header
-      style="border: 1px solid rgb(235, 237, 240)"
-      title="Setting"
-      sub-title="system configuration"
-    />
+    <a-page-header title="Setting" sub-title="system configuration" />
   </a-layout-header>
   <a-layout-content :style="{ margin: '24px 16px 0' }">
-    <div :style="{ padding: '40px', background: '#fff' }">
+    <div :style="{ padding: '24px', background: '#fff' }">
       <a-form :label-col="{ style: { width: '150px' } }">
         <a-form-item label="Registration Allowed">
           <a-switch v-model:checked="openRegister" @change="setOpenRegisterConfig" />
