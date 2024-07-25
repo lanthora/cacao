@@ -11,7 +11,7 @@
 
 <script setup>
 import axios from 'axios'
-import { onMounted, ref } from 'vue'
+import { onMounted, onBeforeMount, ref } from 'vue'
 
 const deviceColumns = [
   {
@@ -25,6 +25,15 @@ const deviceColumns = [
     dataIndex: 'ip',
     key: 'ip',
     align: 'center'
+  },
+  {
+    title: 'Network',
+    dataIndex: 'netid',
+    key: 'netid',
+    align: 'center',
+    customRender: (text) => {
+      return getNetByID(text.value).netname
+    }
   },
   {
     title: 'RX',
@@ -87,6 +96,29 @@ const updateDeviceSource = async () => {
     deviceSource.value = response.data.data.devices
   }
 }
+
+const netMap = ref()
+
+const getNetByID = (netid) => {
+  return netMap.value.get(netid)
+}
+
+const updateNetMap = async () => {
+  const response = await axios.post('/api/net/show')
+
+  const status = response.data.status
+  if (status == 0) {
+    const nets = response.data.data.nets
+    netMap.value = new Map(
+      nets.map(function (object) {
+        return [object.netid, object]
+      })
+    )
+  }
+}
+onBeforeMount(() => {
+  updateNetMap()
+})
 
 onMounted(() => {
   updateDeviceSource()
