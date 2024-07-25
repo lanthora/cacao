@@ -7,7 +7,7 @@
       <a-space style="margin-bottom: 16px">
         <a-button type="primary" @click="openNetDialog(null)"> Add </a-button>
       </a-space>
-      <a-table :columns="netColumns" :dataSource="netSource">
+      <a-table :columns="netColumns" :dataSource="netSource" :scroll="{ x: 'max-content' }">
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'action'">
             <a-space wrap>
@@ -51,7 +51,8 @@ const netColumns = [
     title: 'Net Name',
     dataIndex: 'netname',
     key: 'netname',
-    align: 'center'
+    align: 'center',
+    size: '150px'
   },
   {
     title: 'Password',

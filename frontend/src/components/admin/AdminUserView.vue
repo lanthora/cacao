@@ -36,7 +36,7 @@
       </a-form>
     </div>
     <div :style="{ padding: '24px', margin: '24px 0px 0px', background: '#fff' }">
-      <a-table :columns="userColumns" :dataSource="userSource">
+      <a-table :columns="userColumns" :dataSource="userSource" :scroll="{ x: 'max-content' }">
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'action'">
             <a-space wrap>
