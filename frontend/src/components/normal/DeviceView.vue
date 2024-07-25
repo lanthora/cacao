@@ -4,7 +4,7 @@
   </a-layout-header>
   <a-layout-content :style="{ margin: '24px 16px 0' }">
     <div :style="{ padding: '24px', background: '#fff' }">
-      <a-table :columns="deviceColumns" :dataSource="deviceSource">
+      <a-table :columns="deviceColumns" :dataSource="deviceSource" :scroll="{ x: 'max-content' }">
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'action'">
             <a-space wrap>

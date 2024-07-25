@@ -7,7 +7,7 @@
       <a-space style="margin-bottom: 16px">
         <a-button type="primary" @click="openRouteDialog"> Add </a-button>
       </a-space>
-      <a-table :columns="routeColumns" :dataSource="routeSource">
+      <a-table :columns="routeColumns" :dataSource="routeSource" :scroll="{ x: 'max-content' }">
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'action'">
             <a-space wrap>
