@@ -12,6 +12,7 @@ func init() {
 	if err != nil {
 		logger.Fatal("auto migrate devices failed: %v", err)
 	}
+	db.Model(&Device{}).Where("online = true").Update("online", false)
 }
 
 type Device struct {

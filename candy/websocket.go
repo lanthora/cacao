@@ -124,32 +124,26 @@ func (ws *candysocket) writePong(buffer []byte) error {
 func (ws *candysocket) handlePingMessage(buffer string) error {
 	ws.updateReadDeadline()
 
-	err := func() error {
-		if ws.dev == nil {
-			return fmt.Errorf("ping failed: the client is not logged in: %v", buffer)
-		}
-
-		if ws.dev.model.Online {
-			ws.dev.model.Save()
-		}
-
-		info := strings.Split(buffer, "::")
-		if len(info) < 3 || info[0] != "candy" {
-			return fmt.Errorf("ping failed: invalid format: %v", buffer)
-		}
-
-		ws.dev.model.OS = info[1]
-		ws.dev.model.Version = info[2]
-
-		if len(info) > 3 {
-			ws.dev.model.Hostname = info[3]
-		}
-
+	if ws.dev == nil {
+		logger.Debug("ping failed: the client is not logged in: %v", buffer)
 		return nil
-	}()
+	}
 
-	if err != nil {
-		logger.Debug("client exception: %v", err)
+	info := strings.Split(buffer, "::")
+	if len(info) < 3 || info[0] != "candy" {
+		logger.Debug("ping failed: invalid format: %v", buffer)
+		return nil
+	}
+
+	ws.dev.model.OS = info[1]
+	ws.dev.model.Version = info[2]
+
+	if len(info) > 3 {
+		ws.dev.model.Hostname = info[3]
+	}
+
+	if ws.dev.model.Online {
+		ws.dev.model.Save()
 	}
 
 	ws.writePong([]byte(buffer))
