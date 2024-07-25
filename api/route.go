@@ -72,7 +72,7 @@ func RouteInsert(c *gin.Context) {
 	}
 
 	if notIPv4(request.DevAddr) || notIPv4(request.DevMask) || notIPv4(request.DstAddr) || notIPv4(request.DstMask) || notIPv4(request.NextHop) {
-		status.UpdateCode(c, status.RouteNotExists)
+		status.UpdateCode(c, status.InvalidIPAddress)
 		return
 	}
 

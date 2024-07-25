@@ -22,13 +22,13 @@
     <a-modal v-model:open="routeDialogOpen" title="Route" @ok="addRoute">
       <a-form :model="routeDialogState" :style="{ margin: '24px 0 0' }">
         <a-form-item>
-          <a-input-number
-            style="width: 100%"
-            :controls="false"
+          <a-select
+            ref="select"
             v-model:value="routeDialogState.netid"
             placeholder="Network"
+            :options="netOptions"
           >
-          </a-input-number>
+          </a-select>
         </a-form-item>
         <a-form-item>
           <a-input v-model:value="routeDialogState.devaddr" placeholder="Device Address"> </a-input>
@@ -63,9 +63,18 @@
 
 <script setup>
 import axios from 'axios'
-import { onMounted, ref } from 'vue'
+import { onMounted, onBeforeMount, ref } from 'vue'
 
 const routeColumns = [
+  {
+    title: 'Network',
+    dataIndex: 'netid',
+    key: 'netid',
+    align: 'center',
+    customRender: (text) => {
+      return getNetByID(text.value).netname
+    }
+  },
   {
     title: 'Device Address',
     dataIndex: 'devaddr',
@@ -169,4 +178,31 @@ const deleteRoute = async (record) => {
     updateRouteSource()
   }
 }
+
+const netMap = ref()
+const netOptions = ref([])
+
+const getNetByID = (netid) => {
+  return netMap.value.get(netid)
+}
+
+const updateNetMap = async () => {
+  const response = await axios.post('/api/net/show')
+
+  const status = response.data.status
+  if (status == 0) {
+    const nets = response.data.data.nets
+    netMap.value = new Map(
+      nets.map(function (object) {
+        return [object.netid, object]
+      })
+    )
+    netOptions.value = nets.map(function (object) {
+      return { label: object.netname, value: object.netid }
+    })
+  }
+}
+onBeforeMount(() => {
+  updateNetMap()
+})
 </script>
