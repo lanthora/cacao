@@ -7,6 +7,7 @@ import (
 	"math/rand/v2"
 	"net"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -121,7 +122,7 @@ func (net *Net) updateHost() string {
 	for ok := true; ok; ok = (net.host == 0 || net.host == ^net.mask) {
 		net.host = (net.host + 1) & (^net.mask)
 	}
-	return uint32ToStrIP(net.net | net.host)
+	return uint32ToStrIp(net.net | net.host)
 }
 
 func (net *Net) Close() {
@@ -184,6 +185,15 @@ func DeleteNet(netid uint) {
 	delete(idNetMap, netid)
 }
 
+func ReloadNet(netid uint) {
+	idNetMapMutex.Lock()
+	defer idNetMapMutex.Unlock()
+
+	if net, ok := idNetMap[netid]; ok {
+		net.Close()
+	}
+}
+
 func getNetById(netid uint) *Net {
 	idNetMapMutex.RLock()
 	defer idNetMapMutex.RUnlock()
@@ -194,6 +204,23 @@ func getNetById(netid uint) *Net {
 	return nil
 }
 
+func getNetByPath(path string) *Net {
+	result := strings.Split(strings.Trim(path, "/"), "/")
+	if len(result) < 1 {
+		return nil
+	}
+	username := result[0]
+	netname := "@"
+	if len(result) > 1 {
+		if !IsAlphanumeric(result[1]) {
+			return nil
+		}
+		netname = result[1]
+	}
+	netid := model.GetNetIdByUsernameAndNetname(username, netname)
+	return getNetById(netid)
+}
+
 func absInt64(a, b int64) int64 {
 	if a > b {
 		return a - b
@@ -201,8 +228,12 @@ func absInt64(a, b int64) int64 {
 	return b - a
 }
 
-func uint32ToStrIP(ip uint32) string {
+func uint32ToStrIp(ip uint32) string {
 	var buffer []byte = make([]byte, 4)
 	binary.BigEndian.PutUint32(buffer, ip)
 	return net.IP(buffer).String()
+}
+
+func strIpToUint32(ip string) uint32 {
+	return binary.BigEndian.Uint32(net.ParseIP(ip))
 }
