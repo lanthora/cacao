@@ -125,7 +125,7 @@ func (net *Net) updateHost() string {
 	return uint32ToStrIp(net.net | net.host)
 }
 
-func (net *Net) Close() {
+func (net *Net) close() {
 	net.ipWsMapMutex.Lock()
 	defer net.ipWsMapMutex.Unlock()
 	for ip, ws := range net.ipWsMap {
@@ -179,7 +179,7 @@ func DeleteNet(netid uint) {
 	defer idNetMapMutex.Unlock()
 
 	if net, ok := idNetMap[netid]; ok {
-		net.Close()
+		net.close()
 	}
 
 	delete(idNetMap, netid)
@@ -190,7 +190,7 @@ func ReloadNet(netid uint) {
 	defer idNetMapMutex.Unlock()
 
 	if net, ok := idNetMap[netid]; ok {
-		net.Close()
+		net.close()
 	}
 }
 

@@ -41,3 +41,31 @@ func DeviceShow(c *gin.Context) {
 		"devices": response,
 	})
 }
+
+func DeviceDelete(c *gin.Context) {
+	var request struct {
+		DevID uint `json:"devid"`
+	}
+
+	if err := c.BindJSON(&request); err != nil {
+		status.UpdateCode(c, status.InvalidRequest)
+		return
+	}
+
+	deviceModel := model.GetDeviceByDevID(request.DevID)
+	if deviceModel.Online {
+		status.UpdateCode(c, status.CannotDeleteOnlineDevice)
+		return
+	}
+
+	netModel := model.GetNetByNetID(deviceModel.NetID)
+
+	user := c.MustGet("user").(*model.User)
+	if user.ID != netModel.UserID {
+		status.UpdateCode(c, status.DeviceNotExists)
+		return
+	}
+
+	deviceModel.Delete()
+	status.UpdateSuccess(c, nil)
+}
