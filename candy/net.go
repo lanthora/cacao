@@ -235,5 +235,20 @@ func uint32ToStrIp(ip uint32) string {
 }
 
 func strIpToUint32(ip string) uint32 {
-	return binary.BigEndian.Uint32(net.ParseIP(ip))
+	segs := strings.Split(ip, ".")
+	if len(segs) != 4 {
+		logger.Fatal("convert ip to uint32 failed: %v", ip)
+	}
+
+	s := make([]int, 4)
+	for i := 0; i < 4; i++ {
+		n, err := strconv.Atoi(segs[i])
+		if err != nil || n < 0 || n > 255 {
+			logger.Fatal("convert ip to uint32 failed: %v", ip)
+		}
+		s[i] = n
+	}
+
+	rv := uint32(s[0]<<24 | s[1]<<16 | s[2]<<8 | s[3])
+	return rv
 }

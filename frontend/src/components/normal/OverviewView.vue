@@ -34,7 +34,6 @@ const getUserInformation = async () => {
   const status = response.data.status
   if (status == 0) {
     overview.value = response.data.data
-    console.log(overview.value)
   }
 }
 </script>
