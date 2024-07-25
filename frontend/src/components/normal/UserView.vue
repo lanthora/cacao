@@ -6,8 +6,9 @@
     <div :style="{ padding: '24px', background: '#fff' }">
       <a-form :label-col="{ style: { width: '150px' } }">
         <a-form-item label="User Name"> {{ username }} </a-form-item>
+        <a-divider />
         <a-form-item label="Change Password">
-          <a-form layout="inline" :model="passwordState" @finish="changePassword">
+          <a-form :model="passwordState" @finish="changePassword">
             <a-form-item>
               <a-input v-model:value="passwordState.old" type="password" placeholder="Old Password">
               </a-input>
@@ -27,6 +28,7 @@
             </a-form-item>
           </a-form>
         </a-form-item>
+        <a-divider />
         <a-form-item label="Logout">
           <a-button @click="logout"> Confirm </a-button>
         </a-form-item>
