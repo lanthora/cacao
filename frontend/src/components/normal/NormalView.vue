@@ -9,17 +9,17 @@
           <bar-chart-outlined />
           <span class="nav-text">Overview</span>
         </a-menu-item>
-        <a-menu-item key="device">
-          <desktop-outlined />
-          <span class="nav-text">Device</span>
-        </a-menu-item>
         <a-menu-item key="network">
           <apartment-outlined />
           <span class="nav-text">Network</span>
         </a-menu-item>
-        <a-menu-item key="sdwan">
+        <a-menu-item key="device">
+          <desktop-outlined />
+          <span class="nav-text">Device</span>
+        </a-menu-item>
+        <a-menu-item key="route">
           <thunderbolt-outlined />
-          <span class="nav-text">SD-WAN</span>
+          <span class="nav-text">Route</span>
         </a-menu-item>
         <a-menu-item key="user">
           <user-outlined />
@@ -29,9 +29,9 @@
     </a-layout-sider>
     <a-layout>
       <OverviewView v-if="showOverview()"></OverviewView>
-      <DeviceView v-if="showDevice()"></DeviceView>
       <NetworkView v-if="showNetwork()"></NetworkView>
-      <SdwanView v-if="showSdwan()"></SdwanView>
+      <DeviceView v-if="showDevice()"></DeviceView>
+      <RouteView v-if="showRoute()"></RouteView>
       <UserView v-if="showUser()"></UserView>
       <a-layout-footer style="text-align: center">Cacao © 2024</a-layout-footer>
     </a-layout>
@@ -40,20 +40,19 @@
 
 <script setup>
 import { ref } from 'vue'
-import OverviewView from './OverviewView.vue'
 const selectedKeys = ref(['overview'])
 
 const showOverview = () => {
   return selectedKeys.value.includes('overview')
 }
-const showDevice = () => {
-  return selectedKeys.value.includes('device')
-}
 const showNetwork = () => {
   return selectedKeys.value.includes('network')
 }
-const showSdwan = () => {
-  return selectedKeys.value.includes('sdwan')
+const showDevice = () => {
+  return selectedKeys.value.includes('device')
+}
+const showRoute = () => {
+  return selectedKeys.value.includes('route')
 }
 const showUser = () => {
   return selectedKeys.value.includes('user')

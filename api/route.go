@@ -25,7 +25,7 @@ func RouteShow(c *gin.Context) {
 		DevMask  string `json:"devmask"`
 		DstAddr  string `json:"dstaddr"`
 		DstMask  string `json:"dstmask"`
-		NextHop  string `json:"netxhop"`
+		NextHop  string `json:"nexthop"`
 		Priority int    `json:"priority"`
 	}
 
@@ -33,7 +33,7 @@ func RouteShow(c *gin.Context) {
 	for _, r := range routes {
 		response = append(response, routeinfo{
 			RouteID:  r.ID,
-			NetID:    r.ID,
+			NetID:    r.NetID,
 			DevAddr:  r.DevAddr,
 			DevMask:  r.DevMask,
 			DstAddr:  r.DstAddr,

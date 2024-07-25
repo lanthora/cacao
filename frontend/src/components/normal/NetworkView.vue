@@ -107,16 +107,16 @@ const netDialogState = ref({
 })
 
 const openNetDialog = (record) => {
-  netDialogState.value.netid = record ? record.netid : 0
-  netDialogState.value.netname = record ? record.netname : ''
-  netDialogState.value.password = record ? record.password : ''
-  netDialogState.value.dhcp = record ? record.dhcp : ''
+  netDialogState.value.netid = record ? record.netid : null
+  netDialogState.value.netname = record ? record.netname : null
+  netDialogState.value.password = record ? record.password : null
+  netDialogState.value.dhcp = record ? record.dhcp : null
   netDialogState.value.broadcast = record ? (record.broadcast ? 'true' : 'false') : null
   netDialogOpen.value = true
 }
 
 const handleNetDialog = () => {
-  if (netDialogState.value.netid == 0) {
+  if (netDialogState.value.netid == null) {
     addNet()
   } else {
     editNet()
