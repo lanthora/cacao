@@ -105,15 +105,15 @@ func AdminAddUser(c *gin.Context) {
 		"role": user.Role,
 	})
 
-	modelNet := &model.Net{
+	netModel := &model.Net{
 		UserID:    user.ID,
 		Name:      "@",
 		Password:  request.Password,
 		DHCP:      "192.168.202.0/24",
 		Broadcast: true,
 	}
-	modelNet.Create()
-	candy.InsertNet(modelNet)
+	netModel.Create()
+	candy.InsertNet(netModel)
 }
 
 func AdminDeleteUser(c *gin.Context) {

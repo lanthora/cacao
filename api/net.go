@@ -14,7 +14,7 @@ func NetShow(c *gin.Context) {
 	nets := model.GetNetsByUserID(user.ID)
 
 	type netinfo struct {
-		ID        uint   `json:"netid"`
+		NetID     uint   `json:"netid"`
 		Netname   string `json:"netname"`
 		Password  string `json:"password"`
 		DHCP      string `json:"dhcp"`
@@ -24,7 +24,7 @@ func NetShow(c *gin.Context) {
 	response := make([]netinfo, 0)
 	for _, n := range nets {
 		response = append(response, netinfo{
-			ID:        n.ID,
+			NetID:     n.ID,
 			Netname:   n.Name,
 			Password:  n.Password,
 			DHCP:      n.DHCP,
@@ -61,30 +61,30 @@ func NetInsert(c *gin.Context) {
 	}
 
 	user := c.MustGet("user").(*model.User)
-	modelNet := &model.Net{
+	netModel := &model.Net{
 		UserID: user.ID,
 		Name:   request.Netname,
 	}
 
 	db := storage.Get()
-	result := db.Where(modelNet).Take(modelNet)
+	result := db.Where(netModel).Take(netModel)
 	if result.Error != gorm.ErrRecordNotFound {
 		status.UpdateCode(c, status.NetworkAlreadyExists)
 		return
 	}
 
-	modelNet.Password = request.Password
-	modelNet.DHCP = request.DHCP
-	modelNet.Broadcast = request.Broadcast
-	modelNet.Create()
-	candy.InsertNet(modelNet)
+	netModel.Password = request.Password
+	netModel.DHCP = request.DHCP
+	netModel.Broadcast = request.Broadcast
+	netModel.Create()
+	candy.InsertNet(netModel)
 
 	status.UpdateSuccess(c, gin.H{
-		"netid":     modelNet.ID,
-		"netname":   modelNet.Name,
-		"password":  modelNet.Password,
-		"dhcp":      modelNet.DHCP,
-		"broadcast": modelNet.Broadcast,
+		"netid":     netModel.ID,
+		"netname":   netModel.Name,
+		"password":  netModel.Password,
+		"dhcp":      netModel.DHCP,
+		"broadcast": netModel.Broadcast,
 	})
 }
 
@@ -113,25 +113,25 @@ func NetEdit(c *gin.Context) {
 	}
 
 	user := c.MustGet("user").(*model.User)
-	modelNet := model.GetNetByNetID(request.NetID)
-	if modelNet.UserID != user.ID {
-		status.UpdateCode(c, status.NetworkDoesNotExists)
+	netModel := model.GetNetByNetID(request.NetID)
+	if netModel.UserID != user.ID {
+		status.UpdateCode(c, status.NetworkNotExists)
 		return
 	}
 
-	modelNet.Name = request.Netname
-	modelNet.Password = request.Password
-	modelNet.DHCP = request.DHCP
-	modelNet.Broadcast = request.Broadcast
-	modelNet.Update()
-	candy.UpdateNet(&modelNet)
+	netModel.Name = request.Netname
+	netModel.Password = request.Password
+	netModel.DHCP = request.DHCP
+	netModel.Broadcast = request.Broadcast
+	netModel.Update()
+	candy.UpdateNet(&netModel)
 
 	status.UpdateSuccess(c, gin.H{
-		"netid":     modelNet.ID,
-		"netname":   modelNet.Name,
-		"password":  modelNet.Password,
-		"dhcp":      modelNet.DHCP,
-		"broadcast": modelNet.Broadcast,
+		"netid":     netModel.ID,
+		"netname":   netModel.Name,
+		"password":  netModel.Password,
+		"dhcp":      netModel.DHCP,
+		"broadcast": netModel.Broadcast,
 	})
 }
 
@@ -146,21 +146,21 @@ func NetDelete(c *gin.Context) {
 	}
 
 	user := c.MustGet("user").(*model.User)
-	modelNet := &model.Net{}
-	modelNet.ID = request.ID
+	netModel := &model.Net{}
+	netModel.ID = request.ID
 	db := storage.Get()
-	result := db.Where(modelNet).Take(modelNet)
+	result := db.Where(netModel).Take(netModel)
 
-	if result.Error != nil || modelNet.UserID != user.ID {
-		status.UpdateCode(c, status.NetworkDoesNotExists)
+	if result.Error != nil || netModel.UserID != user.ID {
+		status.UpdateCode(c, status.NetworkNotExists)
 		return
 	}
 
-	modelNet.Delete()
-	candy.DeleteNet(modelNet.ID)
+	netModel.Delete()
+	candy.DeleteNet(netModel.ID)
 
 	status.UpdateSuccess(c, gin.H{
-		"id": modelNet.ID,
+		"id": netModel.ID,
 	})
 }
 

@@ -144,15 +144,15 @@ func UserRegister(c *gin.Context) {
 	}
 
 	if role == "normal" {
-		modelNet := &model.Net{
+		netModel := &model.Net{
 			UserID:    user.ID,
 			Name:      "@",
 			Password:  request.Password,
 			DHCP:      "192.168.202.0/24",
 			Broadcast: true,
 		}
-		modelNet.Create()
-		candy.InsertNet(modelNet)
+		netModel.Create()
+		candy.InsertNet(netModel)
 	}
 }
 

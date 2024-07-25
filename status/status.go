@@ -18,13 +18,15 @@ func init() {
 	statusMessage[UsernameAlreadyTaken] = "username already taken"
 	statusMessage[IncorrectUsernameOrPassword] = "incorrect username or password"
 	statusMessage[NetworkAlreadyExists] = "network already exists"
-	statusMessage[NetworkDoesNotExists] = "network does not exist"
+	statusMessage[NetworkNotExists] = "network not exist"
 	statusMessage[AdminAccessRequired] = "admin access required"
 	statusMessage[RegistrationDisabled] = "registration disabled"
 	statusMessage[InvalidNetworkName] = "invalid network name"
 	statusMessage[InvalidDhcp] = "invalid dhcp"
-	statusMessage[UserDoesNotExists] = "user does not exists"
+	statusMessage[UserNotExists] = "user not exists"
 	statusMessage[CannotDeleteAdmin] = "cannot delete admin"
+	statusMessage[InvalidIPAddress] = "invalid ip address"
+	statusMessage[RouteNotExists] = "route not exists"
 }
 
 const (
@@ -38,13 +40,15 @@ const (
 	UsernameAlreadyTaken
 	IncorrectUsernameOrPassword
 	NetworkAlreadyExists
-	NetworkDoesNotExists
+	NetworkNotExists
 	AdminAccessRequired
 	RegistrationDisabled
 	InvalidNetworkName
 	InvalidDhcp
-	UserDoesNotExists
+	UserNotExists
 	CannotDeleteAdmin
+	InvalidIPAddress
+	RouteNotExists
 )
 
 var statusMessage map[int]string

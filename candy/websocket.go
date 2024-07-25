@@ -39,7 +39,7 @@ func handleWebsocket(c *gin.Context) {
 		return
 	}
 	defer conn.Close()
-	net := getNetFromPath(c.Request.URL.Path)
+	net := getNetByPath(c.Request.URL.Path)
 	if net == nil {
 		logger.Debug("net not found: %v", c.Request.URL.Path)
 		return
@@ -175,9 +175,9 @@ func (ws *candysocket) handleAuthMessage(buffer []byte) error {
 		return fmt.Errorf("auth failed: network does not match")
 	}
 
-	if ws.net.ipConflict(uint32ToStrIP(message.IP), ws.dev.model.VMac) {
+	if ws.net.ipConflict(uint32ToStrIp(message.IP), ws.dev.model.VMac) {
 		ws.writeCloseMessage("ip conflict")
-		return fmt.Errorf("auth failed: ip conflict: %v", uint32ToStrIP(message.IP))
+		return fmt.Errorf("auth failed: ip conflict: %v", uint32ToStrIp(message.IP))
 	}
 
 	ws.net.ipWsMapMutex.Lock()
@@ -195,9 +195,11 @@ func (ws *candysocket) handleAuthMessage(buffer []byte) error {
 
 	db := storage.Get()
 	db.Where(ws.dev.model).First(ws.dev.model)
-	ws.dev.model.IP = uint32ToStrIP(message.IP)
+	ws.dev.model.IP = uint32ToStrIp(message.IP)
 	ws.dev.model.Online = true
 	ws.dev.model.Save()
+
+	ws.updateSystemRoute()
 	return nil
 }
 
@@ -443,19 +445,29 @@ func (ws *candysocket) handleGeneralMessage(buffer []byte) error {
 	return nil
 }
 
-func getNetFromPath(path string) *Net {
-	result := strings.Split(strings.Trim(path, "/"), "/")
-	if len(result) < 1 {
-		return nil
-	}
-	username := result[0]
-	netname := "@"
-	if len(result) > 1 {
-		if !IsAlphanumeric(result[1]) {
-			return nil
+func (ws *candysocket) updateSystemRoute() {
+	header := &RouteMessage{Type: ROUTE, Size: 0, Reserved: 0}
+	bodyBuffer := bytes.Buffer{}
+
+	db := storage.Get()
+	routes := []model.Route{}
+	db.Where(&model.Route{NetID: ws.net.model.ID}).Order("priority").Find(&routes)
+	for _, route := range routes {
+		deviceAddr := strIpToUint32(route.DevAddr)
+		deviceMask := strIpToUint32(route.DevMask)
+		if deviceAddr != deviceMask&ws.dev.ip {
+			continue
 		}
-		netname = result[1]
+		header.Size += 1
+		destAddr := strIpToUint32(route.DstAddr)
+		destMask := strIpToUint32(route.DstMask)
+		nextHop := strIpToUint32(route.NextHop)
+		body := &RouteMessageEntry{Dest: destAddr, Mask: destMask, NextHop: nextHop}
+		struc.Pack(&bodyBuffer, body)
 	}
-	netid := model.GetNetIdByUsernameAndNetname(username, netname)
-	return getNetById(netid)
+	if header.Size > 0 {
+		headerBuffer := bytes.Buffer{}
+		struc.Pack(&headerBuffer, header)
+		ws.writeMessage(append(headerBuffer.Bytes(), bodyBuffer.Bytes()...))
+	}
 }

@@ -46,6 +46,11 @@ func main() {
 	device := r.Group("/api/device")
 	device.POST("/show", api.DeviceShow)
 
+	route := r.Group("/api/route")
+	route.POST("/show", api.RouteShow)
+	route.POST("/insert", api.RouteInsert)
+	route.POST("/delete", api.RouteDelete)
+
 	r.NoRoute(frontend.Static)
 
 	if err := r.Run(addr); err != nil {
