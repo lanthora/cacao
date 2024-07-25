@@ -7,9 +7,7 @@
 <script setup>
 import axios from 'axios'
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 
-const router = useRouter()
 const component = ref('loading')
 
 onMounted(() => {
@@ -33,8 +31,6 @@ const userInfo = async () => {
   const status = response.data.status
   if (status == 0) {
     component.value = response.data.data.role
-  } else if (status == 2) {
-    router.push('/login')
   }
 }
 </script>

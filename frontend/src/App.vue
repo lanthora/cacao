@@ -7,11 +7,17 @@
 <script setup>
 import axios from 'axios'
 import { message } from 'ant-design-vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 axios.interceptors.response.use(
   (response) => {
     if (response.data.status != 0) {
       message.warning(response.data.msg)
+    }
+    if (response.data.status == 2) {
+      router.push('/login')
     }
     return response
   },
