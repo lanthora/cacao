@@ -32,7 +32,8 @@ const deviceColumns = [
     key: 'netid',
     align: 'center',
     customRender: (text) => {
-      return getNetByID(text.value).netname
+      var net = getNetByID(text.value)
+      return net ? net.netname : ''
     }
   },
   {
