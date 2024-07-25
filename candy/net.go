@@ -23,6 +23,8 @@ func init() {
 	for _, netModel := range model.GetNets() {
 		InsertNet(&netModel)
 	}
+
+	go autoFlush()
 }
 
 type Net struct {
@@ -38,18 +40,28 @@ type Net struct {
 var idNetMap map[uint]*Net
 var idNetMapMutex sync.RWMutex
 
-func Flush() {
-	idNetMapMutex.Lock()
-	defer idNetMapMutex.Unlock()
-
+func flush() {
+	idNetMapMutex.RLock()
+	defer idNetMapMutex.RUnlock()
 	for _, n := range idNetMap {
-		n.model.Update()
+		n.ipWsMapMutex.RLock()
+		defer n.ipWsMapMutex.RUnlock()
+		for _, ws := range n.ipWsMap {
+			if ws.dev.model.Online {
+				ws.dev.model.Save()
+			}
+		}
 	}
 }
 
-func (net *Net) ipConflict(ip, vmac string) bool {
+func autoFlush() {
+	flush()
+	time.AfterFunc(time.Minute, autoFlush)
+}
+
+func (n *Net) ipConflict(ip, vmac string) bool {
 	db := storage.Get()
-	device := &model.Device{NetID: net.model.ID, IP: ip}
+	device := &model.Device{NetID: n.model.ID, IP: ip}
 	result := db.Where(device).Take(device)
 	if result.Error == gorm.ErrRecordNotFound {
 		return false
@@ -61,7 +73,7 @@ func (net *Net) ipConflict(ip, vmac string) bool {
 	return true
 }
 
-func (net *Net) checkAuthMessage(message *AuthMessage) error {
+func (n *Net) checkAuthMessage(message *AuthMessage) error {
 	if absInt64(time.Now().Unix(), message.Timestamp) > 30 {
 		return fmt.Errorf("auth check failed: timestamp: %v", message.Timestamp)
 	}
@@ -69,7 +81,7 @@ func (net *Net) checkAuthMessage(message *AuthMessage) error {
 	reported := message.Hash
 
 	var data []byte
-	data = append(data, net.model.Password...)
+	data = append(data, n.model.Password...)
 	data = binary.BigEndian.AppendUint32(data, message.IP)
 	data = binary.BigEndian.AppendUint64(data, uint64(message.Timestamp))
 
@@ -79,7 +91,7 @@ func (net *Net) checkAuthMessage(message *AuthMessage) error {
 	return nil
 }
 
-func (net *Net) checkDHCPMessage(message *DHCPMessage) error {
+func (n *Net) checkDHCPMessage(message *DHCPMessage) error {
 	if absInt64(time.Now().Unix(), message.Timestamp) > 30 {
 		return fmt.Errorf("dhcp check failed: timestamp: %v", message.Timestamp)
 	}
@@ -87,7 +99,7 @@ func (net *Net) checkDHCPMessage(message *DHCPMessage) error {
 	reported := message.Hash
 
 	var data []byte
-	data = append(data, net.model.Password...)
+	data = append(data, n.model.Password...)
 	data = binary.BigEndian.AppendUint64(data, uint64(message.Timestamp))
 
 	if sha256.Sum256([]byte(data)) != reported {
@@ -96,7 +108,7 @@ func (net *Net) checkDHCPMessage(message *DHCPMessage) error {
 	return nil
 }
 
-func (net *Net) checkVMacMessage(message *VMacMessage) error {
+func (n *Net) checkVMacMessage(message *VMacMessage) error {
 	if absInt64(time.Now().Unix(), message.Timestamp) > 30 {
 		return fmt.Errorf("vmac check failed: timestamp: %v", message.Timestamp)
 	}
@@ -108,7 +120,7 @@ func (net *Net) checkVMacMessage(message *VMacMessage) error {
 	reported := message.Hash
 
 	var data []byte
-	data = append(data, net.model.Password...)
+	data = append(data, n.model.Password...)
 	data = append(data, message.VMac...)
 	data = binary.BigEndian.AppendUint64(data, uint64(message.Timestamp))
 
@@ -118,20 +130,20 @@ func (net *Net) checkVMacMessage(message *VMacMessage) error {
 	return nil
 }
 
-func (net *Net) updateHost() string {
-	for ok := true; ok; ok = (net.host == 0 || net.host == ^net.mask) {
-		net.host = (net.host + 1) & (^net.mask)
+func (n *Net) updateHost() string {
+	for ok := true; ok; ok = (n.host == 0 || n.host == ^n.mask) {
+		n.host = (n.host + 1) & (^n.mask)
 	}
-	return uint32ToStrIp(net.net | net.host)
+	return uint32ToStrIp(n.net | n.host)
 }
 
-func (net *Net) close() {
-	net.ipWsMapMutex.Lock()
-	defer net.ipWsMapMutex.Unlock()
-	for ip, ws := range net.ipWsMap {
+func (n *Net) close() {
+	n.ipWsMapMutex.Lock()
+	defer n.ipWsMapMutex.Unlock()
+	for ip, ws := range n.ipWsMap {
 		ws.writeCloseMessage("net close")
 		ws.conn.Close()
-		delete(net.ipWsMap, ip)
+		delete(n.ipWsMap, ip)
 	}
 }
 
