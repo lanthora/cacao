@@ -4,7 +4,17 @@
   </a-layout-header>
   <a-layout-content :style="{ margin: '24px 16px 0' }">
     <div :style="{ padding: '24px', background: '#fff' }">
-      <a-table :columns="deviceColumns" :dataSource="deviceSource"> </a-table>
+      <a-table :columns="deviceColumns" :dataSource="deviceSource">
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'action'">
+            <a-space wrap>
+              <a-button danger type="primary" size="small" @click="deleteDevice(record)">
+                Delete
+              </a-button>
+            </a-space>
+          </template>
+        </template>
+      </a-table>
     </div>
   </a-layout-content>
 </template>
@@ -74,6 +84,11 @@ const deviceColumns = [
     dataIndex: 'version',
     key: 'version',
     align: 'center'
+  },
+  {
+    title: 'Action',
+    key: 'action',
+    align: 'center'
   }
 ]
 
@@ -117,6 +132,19 @@ const updateNetMap = async () => {
     )
   }
 }
+
+const deleteDevice = async (record) => {
+  console.log(record)
+  const response = await axios.post('/api/device/delete', {
+    devid: record.devid
+  })
+
+  const status = response.data.status
+  if (status == 0) {
+    updateDeviceSource()
+  }
+}
+
 onBeforeMount(() => {
   updateNetMap()
 })

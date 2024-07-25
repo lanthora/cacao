@@ -27,6 +27,8 @@ func init() {
 	statusMessage[CannotDeleteAdmin] = "cannot delete admin"
 	statusMessage[InvalidIPAddress] = "invalid ip address"
 	statusMessage[RouteNotExists] = "route not exists"
+	statusMessage[DeviceNotExists] = "device not exists"
+	statusMessage[CannotDeleteOnlineDevice] = "cannot delete online device"
 }
 
 const (
@@ -49,6 +51,8 @@ const (
 	CannotDeleteAdmin
 	InvalidIPAddress
 	RouteNotExists
+	DeviceNotExists
+	CannotDeleteOnlineDevice
 )
 
 var statusMessage map[int]string

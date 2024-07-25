@@ -36,32 +36,55 @@ func (d *Device) Save() {
 	}
 }
 
-func GetDevicesByNetID(netid uint) (devices []Device) {
+func (d *Device) Delete() {
 	db := storage.Get()
-	db.Where(&Device{NetID: netid}).Find(&devices)
+	db.Delete(d)
+}
+
+func GetDeviceByDevID(devid uint) (device Device) {
+	if devid != 0 {
+		db := storage.Get()
+		db.Where(&Device{Model: gorm.Model{ID: devid}}).Find(&device)
+	}
+	return
+}
+
+func GetDevicesByNetID(netid uint) (devices []Device) {
+	if netid != 0 {
+		db := storage.Get()
+		db.Where(&Device{NetID: netid}).Find(&devices)
+	}
 	return
 }
 
 func GetDevicesByUserID(userid uint) (devices []Device) {
-	db := storage.Get()
-	db.Model(&Device{}).Joins("left join nets on devices.net_id = nets.id").Where("nets.user_id = ?", userid).Find(&devices)
+	if userid != 0 {
+		db := storage.Get()
+		db.Model(&Device{}).Joins("left join nets on devices.net_id = nets.id").Where("nets.user_id = ?", userid).Find(&devices)
+	}
 	return
 }
 
 func GetRxSumByUserID(userid uint) (rx uint64) {
-	db := storage.Get()
-	db.Model(&Device{}).Select("sum(rx)").Joins("left join nets on devices.net_id = nets.id").Where("nets.user_id = ?", userid).Take(&rx)
+	if userid != 0 {
+		db := storage.Get()
+		db.Model(&Device{}).Select("sum(rx)").Joins("left join nets on devices.net_id = nets.id").Where("nets.user_id = ?", userid).Take(&rx)
+	}
 	return
 }
 
 func GetTxSumByUserID(userid uint) (tx uint64) {
-	db := storage.Get()
-	db.Model(&Device{}).Select("sum(tx)").Joins("left join nets on devices.net_id = nets.id").Where("nets.user_id = ?", userid).Take(&tx)
+	if userid != 0 {
+		db := storage.Get()
+		db.Model(&Device{}).Select("sum(tx)").Joins("left join nets on devices.net_id = nets.id").Where("nets.user_id = ?", userid).Take(&tx)
+	}
 	return
 }
 
 func DeleteDevicesByNetID(netid uint) (devices []Device) {
-	db := storage.Get()
-	db.Where(&Device{NetID: netid}).Delete(&Device{})
+	if netid != 0 {
+		db := storage.Get()
+		db.Where(&Device{NetID: netid}).Delete(&Device{})
+	}
 	return
 }
