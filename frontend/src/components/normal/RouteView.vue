@@ -5,15 +5,12 @@
   <a-layout-content :style="{ margin: '24px 16px 0' }">
     <div :style="{ padding: '24px', background: '#fff' }">
       <a-space style="margin-bottom: 16px">
-        <a-button type="primary" @click="openRouteDialog(null)"> Add </a-button>
+        <a-button type="primary" @click="openRouteDialog"> Add </a-button>
       </a-space>
       <a-table :columns="routeColumns" :dataSource="routeSource">
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'action'">
             <a-space wrap>
-              <a-button type="primary" size="small" @click="openRouteDialog(record)">
-                Edit
-              </a-button>
               <a-button danger type="primary" size="small" @click="deleteRoute(record)">
                 Delete
               </a-button>
@@ -22,7 +19,7 @@
         </template>
       </a-table>
     </div>
-    <a-modal v-model:open="routeDialogOpen" title="Route" @ok="handleRouteDialog">
+    <a-modal v-model:open="routeDialogOpen" title="Route" @ok="addRoute">
       <a-form :model="routeDialogState" :style="{ margin: '24px 0 0' }">
         <a-form-item>
           <a-input-number
@@ -140,38 +137,20 @@ const routeDialogState = ref({
   priority: 0
 })
 
-const openRouteDialog = (record) => {
-  routeDialogState.value.routeid = record ? record.routeid : null
-  routeDialogState.value.netid = record ? record.netid : null
-  routeDialogState.value.devaddr = record ? record.devaddr : null
-  routeDialogState.value.devmask = record ? record.devmask : null
-  routeDialogState.value.dstaddr = record ? record.dstaddr : null
-  routeDialogState.value.dstmask = record ? record.dstmask : null
-  routeDialogState.value.nexthop = record ? record.nexthop : null
-  routeDialogState.value.priority = record ? record.priority : null
+const openRouteDialog = () => {
+  routeDialogState.value.routeid = null
+  routeDialogState.value.netid = null
+  routeDialogState.value.devaddr = null
+  routeDialogState.value.devmask = null
+  routeDialogState.value.dstaddr = null
+  routeDialogState.value.dstmask = null
+  routeDialogState.value.nexthop = null
+  routeDialogState.value.priority = null
   routeDialogOpen.value = true
-}
-
-const handleRouteDialog = () => {
-  if (routeDialogState.value.routeid == null) {
-    addRoute()
-  } else {
-    editRoute()
-  }
 }
 
 const addRoute = async () => {
   const response = await axios.post('/api/route/insert', routeDialogState.value)
-
-  const status = response.data.status
-  if (status == 0) {
-    routeDialogOpen.value = false
-    updateRouteSource()
-  }
-}
-
-const editRoute = async () => {
-  const response = await axios.post('/api/route/edit', routeDialogState.value)
 
   const status = response.data.status
   if (status == 0) {
