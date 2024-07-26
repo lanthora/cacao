@@ -1,64 +1,72 @@
 <template>
-  <a-layout-header :style="{ background: '#fff', padding: 0 }">
-    <a-page-header title="Route" sub-title="multiple local area network networking" />
-  </a-layout-header>
-  <a-layout-content :style="{ margin: '24px 16px 0' }">
-    <div :style="{ padding: '24px', background: '#fff' }">
-      <a-space style="margin-bottom: 16px">
-        <a-button type="primary" @click="openRouteDialog"> Add </a-button>
-      </a-space>
-      <a-table :columns="routeColumns" :dataSource="routeSource" :scroll="{ x: 'max-content' }">
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'action'">
-            <a-space wrap>
-              <a-button danger type="primary" size="small" @click="deleteRoute(record)">
-                Delete
-              </a-button>
-            </a-space>
-          </template>
-        </template>
-      </a-table>
-    </div>
-    <a-modal v-model:open="routeDialogOpen" title="Route" @ok="addRoute">
-      <a-form :model="routeDialogState" :style="{ margin: '24px 0 0' }">
-        <a-form-item>
-          <a-select
-            ref="select"
-            v-model:value="routeDialogState.netid"
-            placeholder="Network"
-            :options="netOptions"
-          >
-          </a-select>
-        </a-form-item>
-        <a-form-item>
-          <a-input v-model:value="routeDialogState.devaddr" placeholder="Device Address"> </a-input>
-        </a-form-item>
-        <a-form-item>
-          <a-input v-model:value="routeDialogState.devmask" placeholder="Device Mask"> </a-input>
-        </a-form-item>
-        <a-form-item>
-          <a-input v-model:value="routeDialogState.dstaddr" placeholder="Destination Address">
-          </a-input>
-        </a-form-item>
-        <a-form-item>
-          <a-input v-model:value="routeDialogState.dstmask" placeholder="Destination Mask">
-          </a-input>
-        </a-form-item>
-        <a-form-item>
-          <a-input v-model:value="routeDialogState.nexthop" placeholder="Next Hop"> </a-input>
-        </a-form-item>
-        <a-form-item>
-          <a-input-number
-            style="width: 100%"
-            :controls="false"
-            v-model:value="routeDialogState.priority"
-            placeholder="Priority"
-          >
-          </a-input-number>
-        </a-form-item>
-      </a-form>
-    </a-modal>
-  </a-layout-content>
+  <a-layout style="min-height: 98vh">
+    <user-sider />
+    <a-layout>
+      <a-layout-header :style="{ background: '#fff', padding: 0 }">
+        <a-page-header title="Route" sub-title="multiple local area network networking" />
+      </a-layout-header>
+      <a-layout-content :style="{ margin: '24px 16px 0' }">
+        <div :style="{ padding: '24px', background: '#fff' }">
+          <a-space style="margin-bottom: 16px">
+            <a-button type="primary" @click="openRouteDialog"> Add </a-button>
+          </a-space>
+          <a-table :columns="routeColumns" :dataSource="routeSource" :scroll="{ x: 'max-content' }">
+            <template #bodyCell="{ column, record }">
+              <template v-if="column.key === 'action'">
+                <a-space wrap>
+                  <a-button danger type="primary" size="small" @click="deleteRoute(record)">
+                    Delete
+                  </a-button>
+                </a-space>
+              </template>
+            </template>
+          </a-table>
+        </div>
+        <a-modal v-model:open="routeDialogOpen" title="Route" @ok="addRoute">
+          <a-form :model="routeDialogState" :style="{ margin: '24px 0 0' }">
+            <a-form-item>
+              <a-select
+                ref="select"
+                v-model:value="routeDialogState.netid"
+                placeholder="Network"
+                :options="netOptions"
+              >
+              </a-select>
+            </a-form-item>
+            <a-form-item>
+              <a-input v-model:value="routeDialogState.devaddr" placeholder="Device Address">
+              </a-input>
+            </a-form-item>
+            <a-form-item>
+              <a-input v-model:value="routeDialogState.devmask" placeholder="Device Mask">
+              </a-input>
+            </a-form-item>
+            <a-form-item>
+              <a-input v-model:value="routeDialogState.dstaddr" placeholder="Destination Address">
+              </a-input>
+            </a-form-item>
+            <a-form-item>
+              <a-input v-model:value="routeDialogState.dstmask" placeholder="Destination Mask">
+              </a-input>
+            </a-form-item>
+            <a-form-item>
+              <a-input v-model:value="routeDialogState.nexthop" placeholder="Next Hop"> </a-input>
+            </a-form-item>
+            <a-form-item>
+              <a-input-number
+                style="width: 100%"
+                :controls="false"
+                v-model:value="routeDialogState.priority"
+                placeholder="Priority"
+              >
+              </a-input-number>
+            </a-form-item>
+          </a-form>
+        </a-modal>
+      </a-layout-content>
+      <footer-view />
+    </a-layout>
+  </a-layout>
 </template>
 
 <script setup>

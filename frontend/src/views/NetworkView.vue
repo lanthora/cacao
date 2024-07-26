@@ -1,45 +1,53 @@
 <template>
-  <a-layout-header :style="{ background: '#fff', padding: 0 }">
-    <a-page-header title="Network" sub-title="create and manage private networks" />
-  </a-layout-header>
-  <a-layout-content :style="{ margin: '24px 16px 0' }">
-    <div :style="{ padding: '24px', background: '#fff' }">
-      <a-space style="margin-bottom: 16px">
-        <a-button type="primary" @click="openNetDialog(null)"> Add </a-button>
-      </a-space>
-      <a-table :columns="netColumns" :dataSource="netSource" :scroll="{ x: 'max-content' }">
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'action'">
-            <a-space wrap>
-              <a-button type="primary" size="small" @click="openNetDialog(record)"> Edit </a-button>
-              <a-button danger type="primary" size="small" @click="deleteNet(record)">
-                Delete
-              </a-button>
-            </a-space>
-          </template>
-        </template>
-      </a-table>
-    </div>
-    <a-modal v-model:open="netDialogOpen" title="Network" @ok="handleNetDialog">
-      <a-form :model="netDialogState" :style="{ margin: '24px 0 0' }">
-        <a-form-item>
-          <a-input v-model:value="netDialogState.netname" placeholder="Netname"> </a-input>
-        </a-form-item>
-        <a-form-item>
-          <a-input v-model:value="netDialogState.password" placeholder="Password"> </a-input>
-        </a-form-item>
-        <a-form-item>
-          <a-input v-model:value="netDialogState.dhcp" placeholder="DHCP"> </a-input>
-        </a-form-item>
-        <a-form-item>
-          <a-select v-model:value="netDialogState.broadcast" placeholder="Broadcast">
-            <a-select-option value="true">Enable</a-select-option>
-            <a-select-option value="false">Disable</a-select-option>
-          </a-select>
-        </a-form-item>
-      </a-form>
-    </a-modal>
-  </a-layout-content>
+  <a-layout style="min-height: 98vh">
+    <user-sider />
+    <a-layout>
+      <a-layout-header :style="{ background: '#fff', padding: 0 }">
+        <a-page-header title="Network" sub-title="create and manage private networks" />
+      </a-layout-header>
+      <a-layout-content :style="{ margin: '24px 16px 0' }">
+        <div :style="{ padding: '24px', background: '#fff' }">
+          <a-space style="margin-bottom: 16px">
+            <a-button type="primary" @click="openNetDialog(null)"> Add </a-button>
+          </a-space>
+          <a-table :columns="netColumns" :dataSource="netSource" :scroll="{ x: 'max-content' }">
+            <template #bodyCell="{ column, record }">
+              <template v-if="column.key === 'action'">
+                <a-space wrap>
+                  <a-button type="primary" size="small" @click="openNetDialog(record)">
+                    Edit
+                  </a-button>
+                  <a-button danger type="primary" size="small" @click="deleteNet(record)">
+                    Delete
+                  </a-button>
+                </a-space>
+              </template>
+            </template>
+          </a-table>
+        </div>
+        <a-modal v-model:open="netDialogOpen" title="Network" @ok="handleNetDialog">
+          <a-form :model="netDialogState" :style="{ margin: '24px 0 0' }">
+            <a-form-item>
+              <a-input v-model:value="netDialogState.netname" placeholder="Netname"> </a-input>
+            </a-form-item>
+            <a-form-item>
+              <a-input v-model:value="netDialogState.password" placeholder="Password"> </a-input>
+            </a-form-item>
+            <a-form-item>
+              <a-input v-model:value="netDialogState.dhcp" placeholder="DHCP"> </a-input>
+            </a-form-item>
+            <a-form-item>
+              <a-select v-model:value="netDialogState.broadcast" placeholder="Broadcast">
+                <a-select-option value="true">Enable</a-select-option>
+                <a-select-option value="false">Disable</a-select-option>
+              </a-select>
+            </a-form-item>
+          </a-form>
+        </a-modal>
+      </a-layout-content>
+      <footer-view />
+    </a-layout>
+  </a-layout>
 </template>
 
 <script setup>
