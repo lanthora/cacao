@@ -1,6 +1,6 @@
 <template>
   <a-layout style="min-height: 98vh">
-    <user-sider />
+    <user-sider value="device" />
     <a-layout>
       <a-layout-header :style="{ background: '#fff', padding: 0 }">
         <a-page-header title="Device" sub-title="view and manage devices" />
@@ -144,7 +144,6 @@ const updateNetMap = async () => {
 }
 
 const deleteDevice = async (record) => {
-  console.log(record)
   const response = await axios.post('/api/device/delete', {
     devid: record.devid
   })

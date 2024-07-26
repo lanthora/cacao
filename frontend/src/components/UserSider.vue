@@ -1,7 +1,7 @@
 <template>
   <a-layout-sider breakpoint="lg" collapsed-width="0">
-    <LogoView />
-    <a-menu theme="dark" mode="inline" @click="changeRoute">
+    <logo-view />
+    <a-menu v-model:selectedKeys="selectedKeys" theme="dark" mode="inline" @click="changeRoute">
       <a-menu-item key="overview">
         <bar-chart-outlined />
         <span class="nav-text">Overview</span>
@@ -28,6 +28,14 @@
 
 <script setup>
 import { useRouter } from 'vue-router'
+import { ref } from 'vue'
+
+const props = defineProps({
+  value: String
+})
+
+const selectedKeys = ref([props.value])
+
 const router = useRouter()
 const changeRoute = (item) => {
   router.push('/' + item.key)

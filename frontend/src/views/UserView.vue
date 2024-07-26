@@ -1,6 +1,6 @@
 <template>
   <a-layout style="min-height: 98vh">
-    <user-sider />
+    <user-sider value="user" />
     <a-layout>
       <a-layout-header :style="{ background: '#fff', padding: 0 }">
         <a-page-header title="User" sub-title="user information" />

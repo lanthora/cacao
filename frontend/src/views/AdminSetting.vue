@@ -1,6 +1,6 @@
 <template>
   <a-layout style="min-height: 98vh">
-    <admin-sider />
+    <admin-sider value="setting" />
     <a-layout>
       <a-layout-header :style="{ background: '#fff', padding: 0 }">
         <a-page-header title="Setting" sub-title="system configuration" />
