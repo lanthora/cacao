@@ -19,7 +19,7 @@ func init() {
 	statusMessage[IncorrectUsernameOrPassword] = "incorrect username or password"
 	statusMessage[NetworkAlreadyExists] = "network already exists"
 	statusMessage[NetworkNotExists] = "network not exist"
-	statusMessage[AdminAccessRequired] = "admin access required"
+	statusMessage[PermissionDenied] = "permission denied"
 	statusMessage[RegistrationDisabled] = "registration disabled"
 	statusMessage[InvalidNetworkName] = "invalid network name"
 	statusMessage[InvalidDhcp] = "invalid dhcp"
@@ -43,7 +43,7 @@ const (
 	IncorrectUsernameOrPassword
 	NetworkAlreadyExists
 	NetworkNotExists
-	AdminAccessRequired
+	PermissionDenied
 	RegistrationDisabled
 	InvalidNetworkName
 	InvalidDhcp

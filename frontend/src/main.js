@@ -11,19 +11,20 @@ import RouteView from './views/RouteView.vue'
 import UserView from './views/UserView.vue'
 import DeviceView from './views/DeviceView.vue'
 import NetworkView from './views/NetworkView.vue'
-import OverviewView from './views/OverviewView.vue'
+import StatisticsView from './views/StatisticsView.vue'
 
 const routes = [
   { path: '/', component: LoadingView },
   { path: '/login', component: LoginView },
   { path: '/register', component: RegisterView },
-  { path: '/overview', component: OverviewView },
+  { path: '/statistics', component: StatisticsView },
   { path: '/network', component: NetworkView },
   { path: '/device', component: DeviceView },
   { path: '/route', component: RouteView },
   { path: '/user', component: UserView },
   { path: '/admin/user', component: AdminUserView },
-  { path: '/admin/setting', component: AdminSetting }
+  { path: '/admin/setting', component: AdminSetting },
+  { path: '/:pathMatch(.*)', redirect: '/' }
 ]
 
 const router = createRouter({

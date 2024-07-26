@@ -18,6 +18,8 @@ axios.interceptors.response.use(
     }
     if (response.data.status == 2) {
       router.push('/login')
+    } else if (response.data.status == 11) {
+      router.push('/')
     }
     return response
   },

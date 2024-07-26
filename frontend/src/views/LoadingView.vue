@@ -23,7 +23,7 @@ const userInfo = async () => {
     if (role === 'admin') {
       router.push('/admin/user')
     } else {
-      router.push('/overview')
+      router.push('/statistics')
     }
   }
 }

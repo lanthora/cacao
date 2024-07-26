@@ -15,14 +15,27 @@ import (
 
 func AdminMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if strings.HasPrefix(c.Request.URL.String(), "/api/admin/") {
-			if user := c.MustGet("user").(*model.User); user.Role != "admin" {
-				status.UpdateCode(c, status.AdminAccessRequired)
-				c.Abort()
-				return
+		path := c.Request.URL.String()
+		if strings.HasPrefix(path, "/api/") {
+			if user, ok := c.Get("user"); ok {
+				user := user.(*model.User)
+				if strings.HasPrefix(path, "/api/admin/") {
+					if user.Role == "admin" {
+						c.Next()
+					} else {
+						status.UpdateCode(c, status.PermissionDenied)
+						c.Abort()
+					}
+				} else if path == "/api/user/info" || path == "/api/user/logout" {
+					c.Next()
+				} else if user.Role == "normal" {
+					c.Next()
+				} else {
+					status.UpdateCode(c, status.PermissionDenied)
+					c.Abort()
+				}
 			}
 		}
-		c.Next()
 	}
 }
 

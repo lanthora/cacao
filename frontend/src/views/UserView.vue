@@ -38,9 +38,6 @@
                 </a-form-item>
               </a-form>
             </a-form-item>
-            <a-form-item label="Logout">
-              <a-button @click="logout"> Confirm </a-button>
-            </a-form-item>
           </a-form>
         </div>
       </a-layout-content>
@@ -67,7 +64,11 @@ const fetchUsername = async () => {
   const response = await axios.post('/api/user/info')
   const status = response.data.status
   if (status == 0) {
-    username.value = response.data.data.name
+    if (response.data.data.role === 'normal') {
+      username.value = response.data.data.name
+    } else {
+      router.push('/')
+    }
   }
 }
 
@@ -88,14 +89,5 @@ const changePassword = async () => {
   }
   passwordState.value.old = ''
   passwordState.value.new = ''
-}
-
-const logout = async () => {
-  const response = await axios.post('/api/user/logout')
-
-  const status = response.data.status
-  if (status == 0) {
-    router.push('/login')
-  }
 }
 </script>
