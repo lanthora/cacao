@@ -24,12 +24,7 @@
       </a-form-item>
 
       <a-form-item>
-        <a-button
-          :disabled="disabled"
-          type="primary"
-          html-type="submit"
-          class="register-form-button"
-        >
+        <a-button type="primary" html-type="submit" class="register-form-button">
           Register
         </a-button>
       </a-form-item>
@@ -38,7 +33,7 @@
 </template>
 
 <script setup>
-import { reactive, computed } from 'vue'
+import { reactive } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
 
@@ -64,10 +59,6 @@ const userregister = async (username, password) => {
 const onFinish = (values) => {
   userregister(values.username, values.password)
 }
-
-const disabled = computed(() => {
-  return !(registerState.username && registerState.password)
-})
 </script>
 
 <style scoped>

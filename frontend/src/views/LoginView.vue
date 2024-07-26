@@ -24,9 +24,7 @@
       </a-form-item>
 
       <a-form-item>
-        <a-button :disabled="disabled" type="primary" html-type="submit" class="login-form-button">
-          Log in
-        </a-button>
+        <a-button type="primary" html-type="submit" class="login-form-button"> Log in </a-button>
         Or
         <a href="/register">register now</a>
       </a-form-item>
@@ -35,7 +33,7 @@
 </template>
 
 <script setup>
-import { reactive, computed } from 'vue'
+import { reactive } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
 
@@ -61,10 +59,6 @@ const userLogin = async (username, password) => {
 const onFinish = (values) => {
   userLogin(values.username, values.password)
 }
-
-const disabled = computed(() => {
-  return !(loginState.username && loginState.password)
-})
 </script>
 
 <style scoped>
