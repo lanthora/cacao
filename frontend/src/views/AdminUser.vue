@@ -101,41 +101,49 @@ const userColumns = [
   {
     title: 'Username',
     dataIndex: 'username',
-    key: 'username'
+    key: 'username',
+    align: 'center'
   },
   {
     title: 'Role',
     dataIndex: 'role',
-    key: 'role'
+    key: 'role',
+    align: 'center'
   },
   {
     title: 'Network',
     dataIndex: 'netnum',
-    key: 'netnum'
+    key: 'netnum',
+    align: 'center'
   },
   {
     title: 'Device',
     dataIndex: 'devnum',
-    key: 'devnum'
+    key: 'devnum',
+    align: 'center'
   },
   {
     title: 'RX',
     dataIndex: 'rxsum',
-    key: 'rxsum'
+    key: 'rxsum',
+    align: 'center'
   },
   {
     title: 'TX',
     dataIndex: 'txsum',
-    key: 'txsum'
+    key: 'txsum',
+    align: 'center'
   },
   {
     title: 'Register Time',
     dataIndex: 'regtime',
-    key: 'regtime'
+    key: 'regtime',
+    align: 'center'
   },
   {
     title: 'Action',
-    key: 'action'
+    key: 'action',
+    align: 'center'
   }
 ]
 

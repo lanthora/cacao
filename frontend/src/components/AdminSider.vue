@@ -2,13 +2,17 @@
   <a-layout-sider breakpoint="lg" collapsed-width="0">
     <logo-view />
     <a-menu v-model:selectedKeys="selectedKeys" theme="dark" mode="inline" @click="handleMenuClick">
+      <a-menu-item key="setting">
+        <setting-outlined />
+        <span class="nav-text">Setting</span>
+      </a-menu-item>
       <a-menu-item key="user">
         <team-outlined />
         <span class="nav-text">User</span>
       </a-menu-item>
-      <a-menu-item key="setting">
-        <setting-outlined />
-        <span class="nav-text">Setting</span>
+      <a-menu-item key="license">
+        <copyright-outlined />
+        <span class="nav-text">License</span>
       </a-menu-item>
       <a-menu-item key="logout">
         <logout-outlined />

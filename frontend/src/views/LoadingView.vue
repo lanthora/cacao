@@ -21,7 +21,7 @@ const userInfo = async () => {
   if (status == 0) {
     const role = response.data.data.role
     if (role === 'admin') {
-      router.push('/admin/user')
+      router.push('/admin/setting')
     } else {
       router.push('/statistics')
     }

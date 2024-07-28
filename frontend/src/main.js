@@ -4,8 +4,9 @@ import App from './App.vue'
 
 import RegisterView from './views/RegisterView.vue'
 import LoginView from './views/LoginView.vue'
-import AdminUserView from './views/AdminUser.vue'
+import AdminUser from './views/AdminUser.vue'
 import AdminSetting from './views/AdminSetting.vue'
+import AdminLicense from './views/AdminLicense.vue'
 import LoadingView from './views/LoadingView.vue'
 import RouteView from './views/RouteView.vue'
 import UserView from './views/UserView.vue'
@@ -22,7 +23,8 @@ const routes = [
   { path: '/device', component: DeviceView },
   { path: '/route', component: RouteView },
   { path: '/user', component: UserView },
-  { path: '/admin/user', component: AdminUserView },
+  { path: '/admin/license', component: AdminLicense },
+  { path: '/admin/user', component: AdminUser },
   { path: '/admin/setting', component: AdminSetting },
   { path: '/:pathMatch(.*)', redirect: '/' }
 ]
