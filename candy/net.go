@@ -217,14 +217,15 @@ func getNetById(netid uint) *Net {
 }
 
 func getNetByPath(path string) *Net {
-	result := strings.Split(strings.Trim(path, "/"), "/")
-	if len(result) < 1 {
-		return nil
-	}
-	username := result[0]
+	username := "@"
 	netname := "@"
+
+	result := strings.Split(strings.Trim(path, "/"), "/")
+	if IsValidUsername(result[0]) {
+		username = result[0]
+	}
 	if len(result) > 1 {
-		if !IsAlphanumeric(result[1]) {
+		if !IsAlphaNumeric(result[1]) {
 			return nil
 		}
 		netname = result[1]

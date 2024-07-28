@@ -81,7 +81,7 @@ func AdminAddUser(c *gin.Context) {
 		status.UpdateCode(c, status.InvalidRequest)
 		return
 	}
-	if isInvalidUsername(request.Username) {
+	if !candy.IsValidUsername(request.Username) {
 		status.UpdateCode(c, status.InvalidUsername)
 		return
 	}
@@ -163,7 +163,7 @@ func AdminUpdateUserPassword(c *gin.Context) {
 		status.UpdateCode(c, status.InvalidRequest)
 		return
 	}
-	if isInvalidUsername(request.Username) {
+	if !candy.IsValidUsername(request.Username) {
 		status.UpdateCode(c, status.InvalidUsername)
 		return
 	}

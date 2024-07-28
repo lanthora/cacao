@@ -61,6 +61,12 @@ func NetInsert(c *gin.Context) {
 	}
 
 	user := c.MustGet("user").(*model.User)
+
+	if user.Name == "@" && request.Netname != "@" {
+		status.UpdateCode(c, status.InvalidNetworkName)
+		return
+	}
+
 	netModel := &model.Net{
 		UserID: user.ID,
 		Name:   request.Netname,
@@ -113,6 +119,12 @@ func NetEdit(c *gin.Context) {
 	}
 
 	user := c.MustGet("user").(*model.User)
+
+	if user.Name == "@" && request.Netname != "@" {
+		status.UpdateCode(c, status.InvalidNetworkName)
+		return
+	}
+
 	netModel := model.GetNetByNetID(request.NetID)
 	if netModel.UserID != user.ID {
 		status.UpdateCode(c, status.NetworkNotExists)
@@ -168,7 +180,7 @@ func isInvalidNetname(netname string) bool {
 	if netname == "@" {
 		return false
 	}
-	if len(netname) < 3 || len(netname) > 32 || !candy.IsAlphanumeric(netname) {
+	if len(netname) < 3 || len(netname) > 32 || !candy.IsAlphaNumeric(netname) {
 		return true
 	}
 	return false

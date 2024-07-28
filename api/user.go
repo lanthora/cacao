@@ -87,7 +87,11 @@ func UserRegister(c *gin.Context) {
 		status.UpdateCode(c, status.InvalidRequest)
 		return
 	}
-	if isInvalidUsername(request.Username) {
+	if request.Username == "@" {
+		status.UpdateCode(c, status.InvalidUsername)
+		return
+	}
+	if !candy.IsValidUsername(request.Username) {
 		status.UpdateCode(c, status.InvalidUsername)
 		return
 	}
@@ -241,13 +245,6 @@ func ChangePassword(c *gin.Context) {
 	c.SetCookie("token", user.Token, 86400, "/", "", false, true)
 
 	status.UpdateSuccess(c, nil)
-}
-
-func isInvalidUsername(username string) bool {
-	if len(username) < 3 || len(username) > 32 || !candy.IsAlphanumeric(username) {
-		return true
-	}
-	return false
 }
 
 func registerInterval() time.Duration {
