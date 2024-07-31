@@ -15,6 +15,7 @@
                   <a-input
                     v-model:value="passwordState.old"
                     type="password"
+                    autocomplete="new-password"
                     placeholder="Old Password"
                   >
                   </a-input>
@@ -23,6 +24,7 @@
                   <a-input
                     v-model:value="passwordState.new"
                     type="password"
+                    autocomplete="new-password"
                     placeholder="New Password"
                   >
                   </a-input>

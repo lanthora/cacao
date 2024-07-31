@@ -16,11 +16,11 @@
       </a-form-item>
 
       <a-form-item name="password" :rules="[{ required: true, message: 'Input your password' }]">
-        <a-input-password v-model:value="registerState.password">
+        <a-input type="password" autocomplete="new-password" v-model:value="registerState.password">
           <template #prefix>
             <LockOutlined class="site-form-item-icon" />
           </template>
-        </a-input-password>
+        </a-input>
       </a-form-item>
 
       <a-form-item>
