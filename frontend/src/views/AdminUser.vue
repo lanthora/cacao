@@ -140,9 +140,9 @@ const userColumns = [
     align: 'center'
   },
   {
-    title: 'Register Time',
-    dataIndex: 'regtime',
-    key: 'regtime',
+    title: 'Last Active At',
+    dataIndex: 'lastActiveTime',
+    key: 'lastActiveTime',
     align: 'center'
   },
   {

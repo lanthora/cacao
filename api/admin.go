@@ -43,27 +43,29 @@ func AdminShowUsers(c *gin.Context) {
 	users := model.GetUsers()
 
 	type userinfo struct {
-		UserID   uint   `json:"userid"`
-		Username string `json:"username"`
-		Role     string `json:"role"`
-		RegTime  string `json:"regtime"`
-		NetNum   uint   `json:"netnum"`
-		DevNum   uint   `json:"devnum"`
-		RxSum    uint64 `json:"rxsum"`
-		TxSum    uint64 `json:"txsum"`
+		UserID         uint   `json:"userid"`
+		Username       string `json:"username"`
+		Role           string `json:"role"`
+		RegTime        string `json:"regtime"`
+		LastActiveTime string `json:"lastActiveTime"`
+		NetNum         uint   `json:"netnum"`
+		DevNum         uint   `json:"devnum"`
+		RxSum          uint64 `json:"rxsum"`
+		TxSum          uint64 `json:"txsum"`
 	}
 
 	response := make([]userinfo, 0)
 	for _, u := range users {
 		response = append(response, userinfo{
-			UserID:   u.ID,
-			Username: u.Name,
-			Role:     u.Role,
-			RegTime:  u.CreatedAt.Format(time.DateTime),
-			NetNum:   uint(len(model.GetNetsByUserID(u.ID))),
-			DevNum:   uint(len(model.GetDevicesByUserID(u.ID))),
-			RxSum:    model.GetRxSumByUserID(u.ID),
-			TxSum:    model.GetTxSumByUserID(u.ID),
+			UserID:         u.ID,
+			Username:       u.Name,
+			Role:           u.Role,
+			RegTime:        u.CreatedAt.Format(time.DateTime),
+			LastActiveTime: model.GetLastActiveTimeByUserID(u.ID).Format(time.DateTime),
+			NetNum:         uint(len(model.GetNetsByUserID(u.ID))),
+			DevNum:         uint(len(model.GetDevicesByUserID(u.ID))),
+			RxSum:          model.GetRxSumByUserID(u.ID),
+			TxSum:          model.GetTxSumByUserID(u.ID),
 		})
 	}
 

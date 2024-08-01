@@ -1,6 +1,8 @@
 package model
 
 import (
+	"time"
+
 	"github.com/lanthora/cacao/logger"
 	"github.com/lanthora/cacao/storage"
 	"gorm.io/gorm"
@@ -37,4 +39,17 @@ func GetUsers() (users []User) {
 func DeleteUserByUserID(userid uint) {
 	db := storage.Get()
 	db.Delete(&User{Model: gorm.Model{ID: userid}})
+}
+
+func GetLastActiveTimeByUserID(userid uint) (activeTime time.Time) {
+	if userid != 0 {
+		db := storage.Get()
+		result := db.Unscoped().Model(&Device{}).Select("devices.updated_at").Joins("left join nets on devices.net_id = nets.id").Where("nets.user_id = ?", userid).Order("devices.updated_at desc").Take(&activeTime)
+		if result.Error != nil {
+			u := &User{Model: gorm.Model{ID: userid}}
+			db.Model(u).Take(&u)
+			activeTime = u.UpdatedAt
+		}
+	}
+	return
 }
