@@ -69,7 +69,7 @@ func GetDevicesByUserID(userid uint) (devices []Device) {
 func GetRxSumByUserID(userid uint) (rx uint64) {
 	if userid != 0 {
 		db := storage.Get()
-		db.Model(&Device{}).Select("sum(rx)").Joins("left join nets on devices.net_id = nets.id").Where("nets.user_id = ?", userid).Take(&rx)
+		db.Unscoped().Model(&Device{}).Select("sum(rx)").Joins("left join nets on devices.net_id = nets.id").Where("nets.user_id = ?", userid).Take(&rx)
 	}
 	return
 }
@@ -77,7 +77,7 @@ func GetRxSumByUserID(userid uint) (rx uint64) {
 func GetTxSumByUserID(userid uint) (tx uint64) {
 	if userid != 0 {
 		db := storage.Get()
-		db.Model(&Device{}).Select("sum(tx)").Joins("left join nets on devices.net_id = nets.id").Where("nets.user_id = ?", userid).Take(&tx)
+		db.Unscoped().Model(&Device{}).Select("sum(tx)").Joins("left join nets on devices.net_id = nets.id").Where("nets.user_id = ?", userid).Take(&tx)
 	}
 	return
 }
