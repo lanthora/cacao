@@ -96,6 +96,12 @@ const deviceColumns = [
     align: 'center'
   },
   {
+    title: 'Last Active At',
+    dataIndex: 'lastActiveTime',
+    key: 'lastActiveTime',
+    align: 'center'
+  },
+  {
     title: 'Action',
     key: 'action',
     align: 'center'
