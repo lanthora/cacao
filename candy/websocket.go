@@ -304,12 +304,14 @@ func (ws *candysocket) handleDHCPMessage(buffer []byte) error {
 
 	var oldHost = ws.net.host
 	for needGenNewAddr {
-		result := db.Where(&model.Device{NetID: ws.net.model.ID, IP: ws.net.updateHost()})
-		if result.RowsAffected == 0 {
+		count := int64(0)
+		db.Model(&model.Device{}).Where(&model.Device{NetID: ws.net.model.ID, IP: ws.net.updateHost()}).Count(&count)
+		if count == 0 {
 			break
 		}
 		if oldHost == ws.net.host {
-			return fmt.Errorf("dhcp failed: not enough addresses")
+			ws.writeCloseMessage("not enough address")
+			return fmt.Errorf("dhcp failed: not enough address")
 		}
 	}
 
