@@ -231,3 +231,59 @@ func AdminSetRegisterIntervalConfig(c *gin.Context) {
 	model.SetConfig("reginterval", strconv.FormatUint(uint64(request.RegInterval), 10))
 	status.UpdateSuccess(c, nil)
 }
+
+func AdminGetAutoCleanUserConfig(c *gin.Context) {
+	autoCleanUser := model.GetConfig("autoCleanUser", "false") == "true"
+	status.UpdateSuccess(c, gin.H{
+		"autoCleanUser": autoCleanUser,
+	})
+}
+
+func AdminSetAutoCleanUserConfig(c *gin.Context) {
+	var request struct {
+		AutoCleanInactiveUser bool `json:"autoCleanUser"`
+	}
+	if err := c.BindJSON(&request); err != nil {
+		status.UpdateCode(c, status.InvalidRequest)
+		return
+	}
+	if request.AutoCleanInactiveUser {
+		model.SetConfig("autoCleanUser", "true")
+	} else {
+		model.SetConfig("autoCleanUser", "false")
+	}
+	status.UpdateSuccess(c, nil)
+}
+
+func AdminGetInactiveUserThresholdConfig(c *gin.Context) {
+	thresholdStr := model.GetConfig("inactiveUserThreshold", "7")
+	threshold, err := strconv.Atoi(thresholdStr)
+	if err != nil {
+		threshold = 7
+	}
+	status.UpdateSuccess(c, gin.H{
+		"inactiveUserThreshold": threshold,
+	})
+}
+
+func AdminSetInactiveUserThresholdConfig(c *gin.Context) {
+	var request struct {
+		InactiveUserThreshold uint `json:"inactiveUserThreshold"`
+	}
+	if err := c.BindJSON(&request); err != nil {
+		status.UpdateCode(c, status.InvalidRequest)
+		return
+	}
+	if request.InactiveUserThreshold <= 0 {
+		status.UpdateCode(c, status.InvalidInactiveUserThreshold)
+		return
+	}
+
+	model.SetConfig("inactiveUserThreshold", strconv.FormatUint(uint64(request.InactiveUserThreshold), 10))
+	status.UpdateSuccess(c, nil)
+}
+
+func AdminCleanInactiveUser(c *gin.Context) {
+	candy.CleanInactiveUser()
+	status.UpdateSuccess(c, nil)
+}

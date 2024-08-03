@@ -29,6 +29,7 @@ func init() {
 	statusMessage[RouteNotExists] = "route not exists"
 	statusMessage[DeviceNotExists] = "device not exists"
 	statusMessage[CannotDeleteOnlineDevice] = "cannot delete online device"
+	statusMessage[InvalidInactiveUserThreshold] = "invalid inactive user threshold"
 }
 
 const (
@@ -53,6 +54,7 @@ const (
 	RouteNotExists
 	DeviceNotExists
 	CannotDeleteOnlineDevice
+	InvalidInactiveUserThreshold
 )
 
 var statusMessage map[int]string

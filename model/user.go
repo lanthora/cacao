@@ -30,6 +30,11 @@ func (u *User) Save() {
 	db.Save(u)
 }
 
+func (u *User) Delete() {
+	db := storage.Get()
+	db.Delete(u)
+}
+
 func GetUsers() (users []User) {
 	db := storage.Get()
 	db.Find(&users)

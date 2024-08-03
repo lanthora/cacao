@@ -56,7 +56,7 @@ func flush() {
 
 func autoFlush() {
 	flush()
-	time.AfterFunc(time.Minute, autoFlush)
+	time.AfterFunc(time.Duration(1)*time.Minute, autoFlush)
 }
 
 func (n *Net) ipConflict(ip, vmac string) bool {

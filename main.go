@@ -29,6 +29,11 @@ func main() {
 	admin.POST("/setOpenRegisterConfig", api.AdminSetOpenRegisterConfig)
 	admin.POST("/getRegisterIntervalConfig", api.AdminGetRegisterIntervalConfig)
 	admin.POST("/setRegisterIntervalConfig", api.AdminSetRegisterIntervalConfig)
+	admin.POST("/getAutoCleanUserConfig", api.AdminGetAutoCleanUserConfig)
+	admin.POST("/setAutoCleanUserConfig", api.AdminSetAutoCleanUserConfig)
+	admin.POST("/getInactiveUserThresholdConfig", api.AdminGetInactiveUserThresholdConfig)
+	admin.POST("/setInactiveUserThresholdConfig", api.AdminSetInactiveUserThresholdConfig)
+	admin.POST("/cleanInactiveUser", api.AdminCleanInactiveUser)
 
 	user := r.Group("/api/user")
 	user.POST("/info", api.UserInfo)
