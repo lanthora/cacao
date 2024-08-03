@@ -236,6 +236,9 @@ func (ws *candysocket) handleForwardMessage(buffer []byte) error {
 		if message.Dst&0xF0000000 == 0xE0000000 {
 			return true
 		}
+		if message.Dst == 0xFFFFFFFF {
+			return true
+		}
 		return false
 	}()
 
