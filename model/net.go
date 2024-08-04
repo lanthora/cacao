@@ -21,6 +21,7 @@ type Net struct {
 	Password  string
 	DHCP      string
 	Broadcast bool
+	Lease     uint
 }
 
 func (n *Net) Create() {

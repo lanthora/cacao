@@ -32,5 +32,5 @@ func autoCleanInactiveUser() {
 	if model.GetConfig("autoCleanUser", "false") == "true" {
 		CleanInactiveUser()
 	}
-	time.AfterFunc(time.Duration(24)*time.Hour, autoCleanInactiveUser)
+	time.AfterFunc(time.Hour, autoCleanInactiveUser)
 }

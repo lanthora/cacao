@@ -79,7 +79,7 @@ func AdminAddUser(c *gin.Context) {
 		Username string `json:"username"`
 		Password string `json:"password"`
 	}
-	if err := c.BindJSON(&request); err != nil {
+	if err := c.ShouldBindJSON(&request); err != nil {
 		status.UpdateCode(c, status.InvalidRequest)
 		return
 	}
@@ -135,7 +135,7 @@ func AdminDeleteUser(c *gin.Context) {
 		UserID uint `json:"userid"`
 	}
 
-	if err := c.BindJSON(&request); err != nil {
+	if err := c.ShouldBindJSON(&request); err != nil {
 		status.UpdateCode(c, status.InvalidRequest)
 		return
 	}
@@ -161,7 +161,7 @@ func AdminUpdateUserPassword(c *gin.Context) {
 		Username string `json:"username"`
 		Password string `json:"password"`
 	}
-	if err := c.BindJSON(&request); err != nil {
+	if err := c.ShouldBindJSON(&request); err != nil {
 		status.UpdateCode(c, status.InvalidRequest)
 		return
 	}
@@ -196,7 +196,7 @@ func AdminSetOpenRegisterConfig(c *gin.Context) {
 	var request struct {
 		OpenReg bool `json:"openreg"`
 	}
-	if err := c.BindJSON(&request); err != nil {
+	if err := c.ShouldBindJSON(&request); err != nil {
 		status.UpdateCode(c, status.InvalidRequest)
 		return
 	}
@@ -223,7 +223,7 @@ func AdminSetRegisterIntervalConfig(c *gin.Context) {
 	var request struct {
 		RegInterval uint `json:"reginterval"`
 	}
-	if err := c.BindJSON(&request); err != nil {
+	if err := c.ShouldBindJSON(&request); err != nil {
 		status.UpdateCode(c, status.InvalidRequest)
 		return
 	}
@@ -243,7 +243,7 @@ func AdminSetAutoCleanUserConfig(c *gin.Context) {
 	var request struct {
 		AutoCleanInactiveUser bool `json:"autoCleanUser"`
 	}
-	if err := c.BindJSON(&request); err != nil {
+	if err := c.ShouldBindJSON(&request); err != nil {
 		status.UpdateCode(c, status.InvalidRequest)
 		return
 	}
@@ -270,7 +270,7 @@ func AdminSetInactiveUserThresholdConfig(c *gin.Context) {
 	var request struct {
 		InactiveUserThreshold uint `json:"inactiveUserThreshold"`
 	}
-	if err := c.BindJSON(&request); err != nil {
+	if err := c.ShouldBindJSON(&request); err != nil {
 		status.UpdateCode(c, status.InvalidRequest)
 		return
 	}

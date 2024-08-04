@@ -83,7 +83,7 @@ func UserRegister(c *gin.Context) {
 		Username string `json:"username"`
 		Password string `json:"password"`
 	}
-	if err := c.BindJSON(&request); err != nil {
+	if err := c.ShouldBindJSON(&request); err != nil {
 		status.UpdateCode(c, status.InvalidRequest)
 		return
 	}
@@ -171,7 +171,7 @@ func UserLogin(c *gin.Context) {
 		Username string `json:"username"`
 		Password string `json:"password"`
 	}
-	if err := c.BindJSON(&request); err != nil {
+	if err := c.ShouldBindJSON(&request); err != nil {
 		status.UpdateCode(c, status.InvalidRequest)
 		return
 	}
@@ -221,7 +221,7 @@ func ChangePassword(c *gin.Context) {
 		NewPassword string `json:"new"`
 	}
 
-	if err := c.BindJSON(&request); err != nil {
+	if err := c.ShouldBindJSON(&request); err != nil {
 		status.UpdateCode(c, status.InvalidRequest)
 		return
 	}

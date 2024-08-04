@@ -51,7 +51,7 @@ func DeviceDelete(c *gin.Context) {
 		DevID uint `json:"devid"`
 	}
 
-	if err := c.BindJSON(&request); err != nil {
+	if err := c.ShouldBindJSON(&request); err != nil {
 		status.UpdateCode(c, status.InvalidRequest)
 		return
 	}

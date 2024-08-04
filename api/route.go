@@ -59,7 +59,7 @@ func RouteInsert(c *gin.Context) {
 		Priority int    `json:"priority"`
 	}
 
-	if err := c.BindJSON(&request); err != nil {
+	if err := c.ShouldBindJSON(&request); err != nil {
 		status.UpdateCode(c, status.InvalidRequest)
 		return
 	}
@@ -105,7 +105,7 @@ func RouteDelete(c *gin.Context) {
 		RouteID uint `json:"routeid"`
 	}
 
-	if err := c.BindJSON(&request); err != nil {
+	if err := c.ShouldBindJSON(&request); err != nil {
 		status.UpdateCode(c, status.InvalidRequest)
 		return
 	}

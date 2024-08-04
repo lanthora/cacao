@@ -42,6 +42,14 @@
                 <a-select-option value="false">Disable</a-select-option>
               </a-select>
             </a-form-item>
+            <a-form-item>
+              <a-input-number
+                style="width: 100%"
+                :controls="false"
+                v-model:value="netDialogState.lease"
+                placeholder="Lease"
+              ></a-input-number>
+            </a-form-item>
           </a-form>
         </a-modal>
       </a-layout-content>
@@ -84,6 +92,12 @@ const netColumns = [
     }
   },
   {
+    title: 'Lease',
+    dataIndex: 'lease',
+    key: 'lease',
+    align: 'center'
+  },
+  {
     title: 'Action',
     key: 'action',
     align: 'center'
@@ -112,7 +126,8 @@ const netDialogState = ref({
   netname: '',
   password: '',
   dhcp: '',
-  broadcast: false
+  broadcast: false,
+  lease: 0
 })
 
 const openNetDialog = (record) => {
@@ -121,6 +136,7 @@ const openNetDialog = (record) => {
   netDialogState.value.password = record ? record.password : null
   netDialogState.value.dhcp = record ? record.dhcp : null
   netDialogState.value.broadcast = record ? (record.broadcast ? 'true' : 'false') : null
+  netDialogState.value.lease = record ? record.lease : null
   netDialogOpen.value = true
 }
 
@@ -137,7 +153,8 @@ const addNet = async () => {
     netname: netDialogState.value.netname,
     password: netDialogState.value.password,
     dhcp: netDialogState.value.dhcp,
-    broadcast: netDialogState.value.broadcast === 'true'
+    broadcast: netDialogState.value.broadcast === 'true',
+    lease: netDialogState.value.lease
   })
 
   const status = response.data.status
@@ -153,7 +170,8 @@ const editNet = async () => {
     netname: netDialogState.value.netname,
     password: netDialogState.value.password,
     dhcp: netDialogState.value.dhcp,
-    broadcast: netDialogState.value.broadcast === 'true'
+    broadcast: netDialogState.value.broadcast === 'true',
+    lease: netDialogState.value.lease
   })
 
   const status = response.data.status
