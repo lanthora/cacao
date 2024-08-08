@@ -165,7 +165,8 @@ func (ws *candysocket) handleAuthMessage(buffer []byte) error {
 		return fmt.Errorf("auth failed: vmac not received")
 	}
 
-	if ws.net.net != ws.net.mask&message.IP {
+	if ws.net.net != ws.net.mask&message.IP || (^ws.net.mask)&(message.IP) == 0 || (^ws.net.mask)&(message.IP+1) == 0 {
+		ws.writeCloseMessage("ip invalid")
 		return fmt.Errorf("auth failed: network does not match")
 	}
 
