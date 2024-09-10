@@ -5,7 +5,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/lanthora/cacao/model"
-	"github.com/lanthora/cacao/status"
 )
 
 func DeviceShow(c *gin.Context) {
@@ -41,7 +40,7 @@ func DeviceShow(c *gin.Context) {
 		})
 	}
 
-	status.UpdateSuccess(c, gin.H{
+	setResponseData(c, gin.H{
 		"devices": response,
 	})
 }
@@ -52,13 +51,13 @@ func DeviceDelete(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		status.UpdateCode(c, status.InvalidRequest)
+		setErrorCode(c, InvalidRequest)
 		return
 	}
 
 	deviceModel := model.GetDeviceByDevID(request.DevID)
 	if deviceModel.Online {
-		status.UpdateCode(c, status.CannotDeleteOnlineDevice)
+		setErrorCode(c, CannotDeleteOnlineDevice)
 		return
 	}
 
@@ -66,10 +65,10 @@ func DeviceDelete(c *gin.Context) {
 
 	user := c.MustGet("user").(*model.User)
 	if user.ID != netModel.UserID {
-		status.UpdateCode(c, status.DeviceNotExists)
+		setErrorCode(c, DeviceNotExists)
 		return
 	}
 
 	deviceModel.Delete()
-	status.UpdateSuccess(c, nil)
+	setResponseData(c, nil)
 }

@@ -1,4 +1,4 @@
-package status
+package api
 
 import (
 	"net/http"
@@ -9,7 +9,7 @@ import (
 func init() {
 	statusMessage = make(map[int]string)
 	statusMessage[Success] = "success"
-	statusMessage[UnexpectedError] = "unexpected error"
+	statusMessage[Unexpected] = "unexpected"
 	statusMessage[NotLoggedIn] = "not logged in"
 	statusMessage[InvalidRequest] = "invalid request"
 	statusMessage[InvalidUsername] = "invalid username"
@@ -34,7 +34,7 @@ func init() {
 
 const (
 	Success int = iota
-	UnexpectedError
+	Unexpected
 	NotLoggedIn
 	InvalidRequest
 	InvalidUsername
@@ -59,24 +59,22 @@ const (
 
 var statusMessage map[int]string
 
-func UpdateSuccess(c *gin.Context, data gin.H) {
+func setResponse(c *gin.Context, code int, msg string, data gin.H) {
 	c.JSON(http.StatusOK, gin.H{
-		"status": Success,
-		"msg":    statusMessage[Success],
+		"status": code,
+		"msg":    msg,
 		"data":   data,
 	})
 }
 
-func UpdateUnexpected(c *gin.Context, msg string) {
-	c.JSON(http.StatusOK, gin.H{
-		"status": UnexpectedError,
-		"msg":    msg,
-	})
+func setErrorCode(c *gin.Context, code int) {
+	setResponse(c, code, statusMessage[code], nil)
 }
 
-func UpdateCode(c *gin.Context, code int) {
-	c.JSON(http.StatusOK, gin.H{
-		"status": code,
-		"msg":    statusMessage[code],
-	})
+func setUnexpectedMessage(c *gin.Context, msg string) {
+	setResponse(c, Unexpected, msg, nil)
+}
+
+func setResponseData(c *gin.Context, data gin.H) {
+	setResponse(c, Success, statusMessage[Success], data)
 }

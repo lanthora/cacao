@@ -4,7 +4,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/lanthora/cacao/candy"
 	"github.com/lanthora/cacao/model"
-	"github.com/lanthora/cacao/status"
 	"github.com/lanthora/cacao/storage"
 	"gorm.io/gorm"
 )
@@ -34,7 +33,7 @@ func NetShow(c *gin.Context) {
 		})
 	}
 
-	status.UpdateSuccess(c, gin.H{
+	setResponseData(c, gin.H{
 		"nets": response,
 	})
 }
@@ -49,24 +48,24 @@ func NetInsert(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		status.UpdateCode(c, status.InvalidRequest)
+		setErrorCode(c, InvalidRequest)
 		return
 	}
 
 	if isInvalidNetname(request.Netname) {
-		status.UpdateCode(c, status.InvalidNetworkName)
+		setErrorCode(c, InvalidNetworkName)
 		return
 	}
 
 	if candy.IsInvalidDHCP(request.DHCP) {
-		status.UpdateCode(c, status.InvalidDhcp)
+		setErrorCode(c, InvalidDhcp)
 		return
 	}
 
 	user := c.MustGet("user").(*model.User)
 
 	if user.Name == "@" && request.Netname != "@" {
-		status.UpdateCode(c, status.InvalidNetworkName)
+		setErrorCode(c, InvalidNetworkName)
 		return
 	}
 
@@ -78,7 +77,7 @@ func NetInsert(c *gin.Context) {
 	db := storage.Get()
 	result := db.Where(netModel).Take(netModel)
 	if result.Error != gorm.ErrRecordNotFound {
-		status.UpdateCode(c, status.NetworkAlreadyExists)
+		setErrorCode(c, NetworkAlreadyExists)
 		return
 	}
 
@@ -88,7 +87,7 @@ func NetInsert(c *gin.Context) {
 	netModel.Create()
 	candy.InsertNet(netModel)
 
-	status.UpdateSuccess(c, gin.H{
+	setResponseData(c, gin.H{
 		"netid":     netModel.ID,
 		"netname":   netModel.Name,
 		"password":  netModel.Password,
@@ -109,30 +108,30 @@ func NetEdit(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		status.UpdateCode(c, status.InvalidRequest)
+		setErrorCode(c, InvalidRequest)
 		return
 	}
 
 	if isInvalidNetname(request.Netname) {
-		status.UpdateCode(c, status.InvalidNetworkName)
+		setErrorCode(c, InvalidNetworkName)
 		return
 	}
 
 	if candy.IsInvalidDHCP(request.DHCP) {
-		status.UpdateCode(c, status.InvalidDhcp)
+		setErrorCode(c, InvalidDhcp)
 		return
 	}
 
 	user := c.MustGet("user").(*model.User)
 
 	if user.Name == "@" && request.Netname != "@" {
-		status.UpdateCode(c, status.InvalidNetworkName)
+		setErrorCode(c, InvalidNetworkName)
 		return
 	}
 
 	netModel := model.GetNetByNetID(request.NetID)
 	if netModel.UserID != user.ID {
-		status.UpdateCode(c, status.NetworkNotExists)
+		setErrorCode(c, NetworkNotExists)
 		return
 	}
 
@@ -144,7 +143,7 @@ func NetEdit(c *gin.Context) {
 	netModel.Update()
 	candy.UpdateNet(&netModel)
 
-	status.UpdateSuccess(c, gin.H{
+	setResponseData(c, gin.H{
 		"netid":     netModel.ID,
 		"netname":   netModel.Name,
 		"password":  netModel.Password,
@@ -160,7 +159,7 @@ func NetDelete(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		status.UpdateCode(c, status.InvalidRequest)
+		setErrorCode(c, InvalidRequest)
 		return
 	}
 
@@ -171,14 +170,14 @@ func NetDelete(c *gin.Context) {
 	result := db.Where(netModel).Take(netModel)
 
 	if result.Error != nil || netModel.UserID != user.ID {
-		status.UpdateCode(c, status.NetworkNotExists)
+		setErrorCode(c, NetworkNotExists)
 		return
 	}
 
 	netModel.Delete()
 	candy.DeleteNet(netModel.ID)
 
-	status.UpdateSuccess(c, gin.H{
+	setResponseData(c, gin.H{
 		"id": netModel.ID,
 	})
 }

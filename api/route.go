@@ -6,7 +6,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/lanthora/cacao/candy"
 	"github.com/lanthora/cacao/model"
-	"github.com/lanthora/cacao/status"
 )
 
 func notIPv4(ipStr string) bool {
@@ -43,7 +42,7 @@ func RouteShow(c *gin.Context) {
 		})
 	}
 
-	status.UpdateSuccess(c, gin.H{
+	setResponseData(c, gin.H{
 		"routes": response,
 	})
 }
@@ -60,19 +59,19 @@ func RouteInsert(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		status.UpdateCode(c, status.InvalidRequest)
+		setErrorCode(c, InvalidRequest)
 		return
 	}
 
 	user := c.MustGet("user").(*model.User)
 	netModel := model.GetNetByNetID(request.NetID)
 	if netModel.UserID != user.ID {
-		status.UpdateCode(c, status.RouteNotExists)
+		setErrorCode(c, RouteNotExists)
 		return
 	}
 
 	if notIPv4(request.DevAddr) || notIPv4(request.DevMask) || notIPv4(request.DstAddr) || notIPv4(request.DstMask) || notIPv4(request.NextHop) {
-		status.UpdateCode(c, status.InvalidIPAddress)
+		setErrorCode(c, InvalidIPAddress)
 		return
 	}
 
@@ -88,7 +87,7 @@ func RouteInsert(c *gin.Context) {
 	routeModel.Create()
 	candy.ReloadNet(netModel.ID)
 
-	status.UpdateSuccess(c, gin.H{
+	setResponseData(c, gin.H{
 		"routeid":  routeModel.ID,
 		"netid":    routeModel.NetID,
 		"devaddr":  routeModel.DevAddr,
@@ -106,7 +105,7 @@ func RouteDelete(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		status.UpdateCode(c, status.InvalidRequest)
+		setErrorCode(c, InvalidRequest)
 		return
 	}
 
@@ -115,10 +114,10 @@ func RouteDelete(c *gin.Context) {
 
 	user := c.MustGet("user").(*model.User)
 	if user.ID != netModel.UserID {
-		status.UpdateCode(c, status.RouteNotExists)
+		setErrorCode(c, RouteNotExists)
 		return
 	}
 
 	routeModel.Delete()
-	status.UpdateSuccess(c, nil)
+	setResponseData(c, nil)
 }

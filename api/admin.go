@@ -9,7 +9,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/lanthora/cacao/candy"
 	"github.com/lanthora/cacao/model"
-	"github.com/lanthora/cacao/status"
 	"github.com/lanthora/cacao/storage"
 )
 
@@ -23,7 +22,7 @@ func AdminMiddleware() gin.HandlerFunc {
 					if user.Role == "admin" {
 						c.Next()
 					} else {
-						status.UpdateCode(c, status.PermissionDenied)
+						setErrorCode(c, PermissionDenied)
 						c.Abort()
 					}
 				} else if path == "/api/user/info" || path == "/api/user/logout" {
@@ -31,7 +30,7 @@ func AdminMiddleware() gin.HandlerFunc {
 				} else if user.Role == "normal" {
 					c.Next()
 				} else {
-					status.UpdateCode(c, status.PermissionDenied)
+					setErrorCode(c, PermissionDenied)
 					c.Abort()
 				}
 			}
@@ -69,7 +68,7 @@ func AdminShowUsers(c *gin.Context) {
 		})
 	}
 
-	status.UpdateSuccess(c, gin.H{
+	setResponseData(c, gin.H{
 		"users": response,
 	})
 }
@@ -80,15 +79,15 @@ func AdminAddUser(c *gin.Context) {
 		Password string `json:"password"`
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
-		status.UpdateCode(c, status.InvalidRequest)
+		setErrorCode(c, InvalidRequest)
 		return
 	}
 	if !candy.IsValidUsername(request.Username) {
-		status.UpdateCode(c, status.InvalidUsername)
+		setErrorCode(c, InvalidUsername)
 		return
 	}
 	if len(request.Password) == 0 {
-		status.UpdateCode(c, status.InvalidPassword)
+		setErrorCode(c, InvalidPassword)
 		return
 	}
 
@@ -98,7 +97,7 @@ func AdminAddUser(c *gin.Context) {
 		db.Model(&model.User{}).Where(&model.User{Name: request.Username}).Count(&count)
 		return count > 0
 	}() {
-		status.UpdateCode(c, status.UsernameAlreadyTaken)
+		setErrorCode(c, UsernameAlreadyTaken)
 		return
 	}
 
@@ -110,11 +109,11 @@ func AdminAddUser(c *gin.Context) {
 	}
 
 	if result := db.Create(&user); result.Error != nil {
-		status.UpdateUnexpected(c, result.Error.Error())
+		setUnexpectedMessage(c, result.Error.Error())
 		return
 	}
 
-	status.UpdateSuccess(c, gin.H{
+	setResponseData(c, gin.H{
 		"name": user.Name,
 		"role": user.Role,
 	})
@@ -136,13 +135,13 @@ func AdminDeleteUser(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		status.UpdateCode(c, status.InvalidRequest)
+		setErrorCode(c, InvalidRequest)
 		return
 	}
 
 	user := c.MustGet("user").(*model.User)
 	if request.UserID == user.ID {
-		status.UpdateCode(c, status.CannotDeleteAdmin)
+		setErrorCode(c, CannotDeleteAdmin)
 		return
 	}
 
@@ -153,7 +152,7 @@ func AdminDeleteUser(c *gin.Context) {
 		model.DeleteNetByNetID(n.ID)
 	}
 	model.DeleteUserByUserID(request.UserID)
-	status.UpdateSuccess(c, nil)
+	setResponseData(c, nil)
 }
 
 func AdminUpdateUserPassword(c *gin.Context) {
@@ -162,32 +161,32 @@ func AdminUpdateUserPassword(c *gin.Context) {
 		Password string `json:"password"`
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
-		status.UpdateCode(c, status.InvalidRequest)
+		setErrorCode(c, InvalidRequest)
 		return
 	}
 	if !candy.IsValidUsername(request.Username) {
-		status.UpdateCode(c, status.InvalidUsername)
+		setErrorCode(c, InvalidUsername)
 		return
 	}
 	if len(request.Password) == 0 {
-		status.UpdateCode(c, status.InvalidPassword)
+		setErrorCode(c, InvalidPassword)
 		return
 	}
 
 	user := model.User{Name: request.Username}
 	db := storage.Get()
 	if result := db.Model(&model.User{}).Where(user).Take(&user); result.Error != nil {
-		status.UpdateCode(c, status.UnexpectedError)
+		setErrorCode(c, Unexpected)
 		return
 	}
 	user.Password = hashUserPassword(user.Name, request.Password)
 	user.Save()
-	status.UpdateSuccess(c, nil)
+	setResponseData(c, nil)
 }
 
 func AdminGetOpenRegisterConfig(c *gin.Context) {
 	openreg := model.GetConfig("openreg", "true") == "true"
-	status.UpdateSuccess(c, gin.H{
+	setResponseData(c, gin.H{
 		"openreg": openreg,
 	})
 }
@@ -197,7 +196,7 @@ func AdminSetOpenRegisterConfig(c *gin.Context) {
 		OpenReg bool `json:"openreg"`
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
-		status.UpdateCode(c, status.InvalidRequest)
+		setErrorCode(c, InvalidRequest)
 		return
 	}
 	if request.OpenReg {
@@ -205,7 +204,7 @@ func AdminSetOpenRegisterConfig(c *gin.Context) {
 	} else {
 		model.SetConfig("openreg", "false")
 	}
-	status.UpdateSuccess(c, nil)
+	setResponseData(c, nil)
 }
 
 func AdminGetRegisterIntervalConfig(c *gin.Context) {
@@ -214,7 +213,7 @@ func AdminGetRegisterIntervalConfig(c *gin.Context) {
 	if err != nil {
 		interval = 1440
 	}
-	status.UpdateSuccess(c, gin.H{
+	setResponseData(c, gin.H{
 		"reginterval": interval,
 	})
 }
@@ -224,17 +223,17 @@ func AdminSetRegisterIntervalConfig(c *gin.Context) {
 		RegInterval uint `json:"reginterval"`
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
-		status.UpdateCode(c, status.InvalidRequest)
+		setErrorCode(c, InvalidRequest)
 		return
 	}
 
 	model.SetConfig("reginterval", strconv.FormatUint(uint64(request.RegInterval), 10))
-	status.UpdateSuccess(c, nil)
+	setResponseData(c, nil)
 }
 
 func AdminGetAutoCleanUserConfig(c *gin.Context) {
 	autoCleanUser := model.GetConfig("autoCleanUser", "false") == "true"
-	status.UpdateSuccess(c, gin.H{
+	setResponseData(c, gin.H{
 		"autoCleanUser": autoCleanUser,
 	})
 }
@@ -244,7 +243,7 @@ func AdminSetAutoCleanUserConfig(c *gin.Context) {
 		AutoCleanInactiveUser bool `json:"autoCleanUser"`
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
-		status.UpdateCode(c, status.InvalidRequest)
+		setErrorCode(c, InvalidRequest)
 		return
 	}
 	if request.AutoCleanInactiveUser {
@@ -252,7 +251,7 @@ func AdminSetAutoCleanUserConfig(c *gin.Context) {
 	} else {
 		model.SetConfig("autoCleanUser", "false")
 	}
-	status.UpdateSuccess(c, nil)
+	setResponseData(c, nil)
 }
 
 func AdminGetInactiveUserThresholdConfig(c *gin.Context) {
@@ -261,7 +260,7 @@ func AdminGetInactiveUserThresholdConfig(c *gin.Context) {
 	if err != nil {
 		threshold = 7
 	}
-	status.UpdateSuccess(c, gin.H{
+	setResponseData(c, gin.H{
 		"inactiveUserThreshold": threshold,
 	})
 }
@@ -271,19 +270,19 @@ func AdminSetInactiveUserThresholdConfig(c *gin.Context) {
 		InactiveUserThreshold uint `json:"inactiveUserThreshold"`
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
-		status.UpdateCode(c, status.InvalidRequest)
+		setErrorCode(c, InvalidRequest)
 		return
 	}
 	if request.InactiveUserThreshold <= 0 {
-		status.UpdateCode(c, status.InvalidInactiveUserThreshold)
+		setErrorCode(c, InvalidInactiveUserThreshold)
 		return
 	}
 
 	model.SetConfig("inactiveUserThreshold", strconv.FormatUint(uint64(request.InactiveUserThreshold), 10))
-	status.UpdateSuccess(c, nil)
+	setResponseData(c, nil)
 }
 
 func AdminCleanInactiveUser(c *gin.Context) {
 	candy.CleanInactiveUser()
-	status.UpdateSuccess(c, nil)
+	setResponseData(c, nil)
 }
