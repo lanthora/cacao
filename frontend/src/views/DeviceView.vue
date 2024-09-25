@@ -113,7 +113,7 @@ const formatRxTx = (value) => {
   var unit = ['B', 'KB', 'MB', 'GB', 'TB', 'EB']
   while (value > 1024) {
     cnt += 1
-    value /= 2024
+    value /= 1024
   }
   return value.toFixed(3) + ' ' + unit[cnt]
 }
