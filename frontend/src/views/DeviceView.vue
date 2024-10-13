@@ -41,12 +41,6 @@ const deviceColumns = [
     align: 'center'
   },
   {
-    title: 'IP',
-    dataIndex: 'ip',
-    key: 'ip',
-    align: 'center'
-  },
-  {
     title: 'Network',
     dataIndex: 'netid',
     key: 'netid',
@@ -55,6 +49,24 @@ const deviceColumns = [
       var net = getNetByID(text.value)
       return net ? net.netname : ''
     }
+  },
+  {
+    title: 'IP',
+    dataIndex: 'ip',
+    key: 'ip',
+    align: 'center'
+  },
+  {
+    title: 'Country',
+    dataIndex: 'country',
+    key: 'country',
+    align: 'center'
+  },
+  {
+    title: 'City',
+    dataIndex: 'city',
+    key: 'city',
+    align: 'center'
   },
   {
     title: 'RX',

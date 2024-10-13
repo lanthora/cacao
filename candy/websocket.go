@@ -192,6 +192,7 @@ func (ws *candysocket) handleAuthMessage(buffer []byte) error {
 	db.Where(ws.dev.model).First(ws.dev.model)
 	ws.dev.model.IP = uint32ToStrIp(message.IP)
 	ws.dev.model.Online = true
+	ws.dev.model.Country, ws.dev.model.City = storage.GetCountryCity(ws.ctx.ClientIP())
 	ws.dev.model.Save()
 
 	ws.updateSystemRoute()
