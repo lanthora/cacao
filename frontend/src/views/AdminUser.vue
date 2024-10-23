@@ -48,9 +48,14 @@
             <template #bodyCell="{ column, record }">
               <template v-if="column.key === 'action'">
                 <a-space wrap>
-                  <a-button danger type="primary" size="small" @click="deleteUser(record.userid)">
-                    Delete
-                  </a-button>
+                  <a-popconfirm
+                    title="Are you sure delete this user?"
+                    ok-text="Yes"
+                    cancel-text="No"
+                    @confirm="deleteUser(record.userid)"
+                  >
+                    <a-button danger type="primary" size="small"> Delete </a-button>
+                  </a-popconfirm>
                 </a-space>
               </template>
             </template>

@@ -15,9 +15,14 @@
             <template #bodyCell="{ column, record }">
               <template v-if="column.key === 'action'">
                 <a-space wrap>
-                  <a-button danger type="primary" size="small" @click="deleteDevice(record)">
-                    Delete
-                  </a-button>
+                  <a-popconfirm
+                    title="Are you sure delete this device?"
+                    ok-text="Yes"
+                    cancel-text="No"
+                    @confirm="deleteDevice(record)"
+                  >
+                    <a-button danger type="primary" size="small"> Delete </a-button>
+                  </a-popconfirm>
                 </a-space>
               </template>
             </template>
@@ -48,25 +53,35 @@ const deviceColumns = [
     customRender: (text) => {
       var net = getNetByID(text.value)
       return net ? net.netname : ''
-    }
+    },
+    sorter: (a, b) => a.netid - b.netid
   },
   {
     title: 'IP',
     dataIndex: 'ip',
     key: 'ip',
-    align: 'center'
+    align: 'center',
+    sorter: (a, b) => compareDottedDecimal(a.ip, b.ip)
   },
   {
     title: 'Country',
     dataIndex: 'country',
     key: 'country',
-    align: 'center'
+    align: 'center',
+    sorter: (a, b) => a.country.localeCompare(b.country)
   },
   {
     title: 'City',
     dataIndex: 'city',
     key: 'city',
-    align: 'center'
+    align: 'center',
+    sorter: (a, b) => {
+      const tmp = a.country.localeCompare(b.country)
+      if (tmp == 0) {
+        return a.city.localeCompare(b.city)
+      }
+      return tmp
+    }
   },
   {
     title: 'RX',
@@ -75,7 +90,8 @@ const deviceColumns = [
     align: 'center',
     customRender: (text) => {
       return formatRxTx(text.value)
-    }
+    },
+    sorter: (a, b) => a.rx - b.rx
   },
   {
     title: 'TX',
@@ -84,7 +100,8 @@ const deviceColumns = [
     align: 'center',
     customRender: (text) => {
       return formatRxTx(text.value)
-    }
+    },
+    sorter: (a, b) => a.tx - b.tx
   },
   {
     title: 'Online',
@@ -93,25 +110,29 @@ const deviceColumns = [
     align: 'center',
     customRender: (text) => {
       return text.value ? 'true' : 'false'
-    }
+    },
+    sorter: (a, b) => a.online - b.online
   },
   {
     title: 'OS',
     dataIndex: 'os',
     key: 'os',
-    align: 'center'
+    align: 'center',
+    sorter: (a, b) => a.os.localeCompare(b.os)
   },
   {
     title: 'Version',
     dataIndex: 'version',
     key: 'version',
-    align: 'center'
+    align: 'center',
+    sorter: (a, b) => compareDottedDecimal(a.version, b.version)
   },
   {
     title: 'Last Active At',
     dataIndex: 'lastActiveTime',
     key: 'lastActiveTime',
-    align: 'center'
+    align: 'center',
+    sorter: (a, b) => a.lastActiveTime.localeCompare(b.lastActiveTime)
   },
   {
     title: 'Action',
@@ -145,6 +166,24 @@ const netMap = ref()
 
 const getNetByID = (netid) => {
   return netMap.value.get(netid)
+}
+
+const compareDottedDecimal = (a, b) => {
+  const lista = a.split('.')
+  const listb = b.split('.')
+
+  for (let i = 0; i < Math.max(lista.length, listb.length); i++) {
+    const itema = parseInt(lista[i] || '0', 10)
+    const itemb = parseInt(listb[i] || '0', 10)
+
+    if (itema > itemb) {
+      return 1
+    } else if (itema < itemb) {
+      return -1
+    }
+  }
+
+  return 0
 }
 
 const updateNetMap = async () => {
