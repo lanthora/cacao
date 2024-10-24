@@ -88,9 +88,7 @@ const deviceColumns = [
     dataIndex: 'rx',
     key: 'rx',
     align: 'center',
-    customRender: (text) => {
-      return formatRxTx(text.value)
-    },
+    customRender: (text) => formatRxTx(text.value),
     sorter: (a, b) => a.rx - b.rx
   },
   {
@@ -98,9 +96,7 @@ const deviceColumns = [
     dataIndex: 'tx',
     key: 'tx',
     align: 'center',
-    customRender: (text) => {
-      return formatRxTx(text.value)
-    },
+    customRender: (text) => formatRxTx(text.value),
     sorter: (a, b) => a.tx - b.tx
   },
   {

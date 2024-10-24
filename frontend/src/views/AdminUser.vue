@@ -72,6 +72,16 @@ import { message } from 'ant-design-vue'
 import axios from 'axios'
 import { onMounted, ref } from 'vue'
 
+const formatRxTx = (value) => {
+  var cnt = 0
+  var unit = ['B', 'KB', 'MB', 'GB', 'TB', 'EB']
+  while (value > 1024) {
+    cnt += 1
+    value /= 1024
+  }
+  return value.toFixed(3) + ' ' + unit[cnt]
+}
+
 const userState = ref({
   username: '',
   password: ''
@@ -136,12 +146,14 @@ const userColumns = [
     title: 'RX',
     dataIndex: 'rxsum',
     key: 'rxsum',
+    customRender: (text) => formatRxTx(text.value),
     align: 'center'
   },
   {
     title: 'TX',
     dataIndex: 'txsum',
     key: 'txsum',
+    customRender: (text) => formatRxTx(text.value),
     align: 'center'
   },
   {
