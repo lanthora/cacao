@@ -3,6 +3,7 @@ package api
 import (
 	"crypto/sha256"
 	"fmt"
+	"math/rand"
 	"strconv"
 	"strings"
 	"time"
@@ -156,7 +157,7 @@ func UserRegister(c *gin.Context) {
 		netModel := &model.Net{
 			UserID:    user.ID,
 			Name:      "@",
-			Password:  request.Password,
+			Password:  randomString(8),
 			DHCP:      "192.168.202.0/24",
 			Broadcast: true,
 		}
@@ -258,4 +259,14 @@ func registerInterval() time.Duration {
 func hashUserPassword(username, password string) string {
 	hash := sha256.Sum256([]byte(username + ":" + password))
 	return fmt.Sprintf("%x", hash[:])
+}
+
+func randomString(n int) string {
+	letters := "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letters[r.Intn(len(letters))]
+	}
+	return string(b)
 }

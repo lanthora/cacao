@@ -121,7 +121,7 @@ func AdminAddUser(c *gin.Context) {
 	netModel := &model.Net{
 		UserID:    user.ID,
 		Name:      "@",
-		Password:  request.Password,
+		Password:  randomString(8),
 		DHCP:      "192.168.202.0/24",
 		Broadcast: true,
 	}
