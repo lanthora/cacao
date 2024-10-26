@@ -49,11 +49,20 @@ func DeleteUserByUserID(userid uint) {
 func GetLastActiveTimeByUserID(userid uint) (activeTime time.Time) {
 	if userid != 0 {
 		db := storage.Get()
+
+		u := &User{Model: gorm.Model{ID: userid}}
+		db.Model(u).Take(&u)
+
 		result := db.Unscoped().Model(&Device{}).Select("devices.updated_at").Joins("left join nets on devices.net_id = nets.id").Where("nets.user_id = ?", userid).Order("devices.updated_at desc").Take(&activeTime)
 		if result.Error != nil {
-			u := &User{Model: gorm.Model{ID: userid}}
-			db.Model(u).Take(&u)
+			logger.Debug("get user last active time failed: %v", result.Error)
 			activeTime = u.UpdatedAt
+			return
+		}
+
+		if u.UpdatedAt.Before(activeTime) {
+			u.UpdatedAt = activeTime
+			u.Save()
 		}
 	}
 	return
