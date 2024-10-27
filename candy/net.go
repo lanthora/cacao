@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/lanthora/cacao/logger"
 	"github.com/lanthora/cacao/model"
 	"github.com/lanthora/cacao/storage"
@@ -43,15 +44,25 @@ var idNetMapMutex sync.RWMutex
 func flush() {
 	idNetMapMutex.RLock()
 	defer idNetMapMutex.RUnlock()
+
+	refreshedUsers := mapset.NewSet[uint]()
+
 	for _, n := range idNetMap {
 		n.ipWsMapMutex.RLock()
 		defer n.ipWsMapMutex.RUnlock()
+		hasDeviceOnline := false
 		for _, ws := range n.ipWsMap {
 			if ws.dev.model.Online {
+				hasDeviceOnline = true
 				ws.dev.model.Save()
 			}
 		}
+		if hasDeviceOnline && !refreshedUsers.ContainsOne(n.model.UserID) {
+			model.RefreshUserLastActiveTimeByUserID(n.model.UserID)
+			refreshedUsers.Add(n.model.UserID)
+		}
 	}
+	refreshedUsers.Clear()
 }
 
 func autoFlush() {
