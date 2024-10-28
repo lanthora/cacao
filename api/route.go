@@ -119,5 +119,6 @@ func RouteDelete(c *gin.Context) {
 	}
 
 	routeModel.Delete()
+	candy.ReloadNet(netModel.ID)
 	setResponseData(c, nil)
 }
