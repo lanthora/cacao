@@ -192,7 +192,7 @@ func (ws *candysocket) handleAuthMessage(buffer []byte) error {
 	db.Where(ws.dev.model).First(ws.dev.model)
 	ws.dev.model.IP = uint32ToStrIp(message.IP)
 	ws.dev.model.Online = true
-	ws.dev.model.Country, ws.dev.model.Region = storage.GetLocation(net.ParseIP(ws.ctx.ClientIP()))
+	ws.dev.model.Country, ws.dev.model.Region = GetLocation(net.ParseIP(ws.ctx.ClientIP()))
 	ws.dev.model.Save()
 
 	ws.updateSystemRoute()
@@ -357,7 +357,7 @@ func (ws *candysocket) handlePeerConnMessage(buffer []byte) error {
 
 	ip := make(net.IP, 4)
 	binary.BigEndian.PutUint32(ip, message.IP)
-	ws.dev.model.Country, ws.dev.model.Region = storage.GetLocation(ip)
+	ws.dev.model.Country, ws.dev.model.Region = GetLocation(ip)
 	ws.dev.model.Save()
 
 	return nil
