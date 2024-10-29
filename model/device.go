@@ -27,7 +27,7 @@ type Device struct {
 	Version  string
 	Hostname string
 	Country  string
-	City     string
+	Region   string
 }
 
 func (d *Device) Save() {

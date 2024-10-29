@@ -71,14 +71,14 @@ const deviceColumns = [
     sorter: (a, b) => a.country.localeCompare(b.country)
   },
   {
-    title: 'City',
-    dataIndex: 'city',
-    key: 'city',
+    title: 'Region',
+    dataIndex: 'region',
+    key: 'region',
     align: 'center',
     sorter: (a, b) => {
       const tmp = a.country.localeCompare(b.country)
       if (tmp == 0) {
-        return a.city.localeCompare(b.city)
+        return a.region.localeCompare(b.region)
       }
       return tmp
     }

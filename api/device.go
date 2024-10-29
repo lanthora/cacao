@@ -22,7 +22,7 @@ func DeviceShow(c *gin.Context) {
 		Version        string `json:"version"`
 		Hostname       string `json:"hostname"`
 		Country        string `json:"country"`
-		City           string `json:"city"`
+		Region         string `json:"region"`
 		LastActiveTime string `json:"lastActiveTime"`
 	}
 
@@ -39,7 +39,7 @@ func DeviceShow(c *gin.Context) {
 			Version:        d.Version,
 			Hostname:       d.Hostname,
 			Country:        d.Country,
-			City:           d.City,
+			Region:         d.Region,
 			LastActiveTime: d.UpdatedAt.Format(time.DateTime),
 		})
 	}

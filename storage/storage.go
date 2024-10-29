@@ -48,7 +48,7 @@ func findFileByExtFromDir(dir string, ext string) (string, error) {
 	return "", os.ErrNotExist
 }
 
-func GetCountryCity(ip net.IP) (country, city string) {
+func GetLocation(ip net.IP) (country, region string) {
 	storageDir := argp.Get("storage", ".")
 	filename, err := findFileByExtFromDir(storageDir, ".mmdb")
 	if err != nil {
@@ -63,10 +63,15 @@ func GetCountryCity(ip net.IP) (country, city string) {
 	defer db.Close()
 	record, err := db.City(ip)
 	if err != nil {
-		logger.Debug("get location mmdb failed: %v", err)
+		logger.Debug("get location failed: %v", err)
 		return
 	}
+
 	country = record.Country.IsoCode
-	city = record.City.Names["en"]
+
+	if len(record.Subdivisions) > 0 {
+		region = record.Subdivisions[0].Names["en"]
+	}
+
 	return
 }
