@@ -17,8 +17,8 @@ import (
 func GetLocation(ip net.IP) (country, region string) {
 	if !ip.IsPrivate() {
 		ok := false
-		if country, region, ok = ipinfoLocation(ip); !ok {
-			country, region, _ = mmdbLocation(ip)
+		if country, region, ok = mmdbLocation(ip); !ok {
+			country, region, _ = ipinfoLocation(ip)
 		}
 	}
 	return
@@ -76,7 +76,6 @@ func mmdbLocation(ip net.IP) (country, region string, ok bool) {
 	storageDir := argp.Get("storage", ".")
 	filename, err := findFileByExtFromDir(storageDir, ".mmdb")
 	if err != nil {
-		logger.Debug("cannot found mmdb file: %v", err)
 		return
 	}
 	db, err := geoip2.Open(path.Join(storageDir, filename))
