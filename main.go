@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+
 	"github.com/gin-gonic/gin"
 	"github.com/lanthora/cacao/api"
 	"github.com/lanthora/cacao/argp"
@@ -13,9 +15,18 @@ func init() {
 	gin.SetMode(gin.ReleaseMode)
 }
 
+func fileExists(filePath string) bool {
+	_, err := os.Stat(filePath)
+	return !os.IsNotExist(err)
+}
+
 func main() {
+	apikey := argp.Get("apikey", ".")
+	apicrt := argp.Get("apicrt", ".")
+	tlsEnable := apikey != "." && apicrt != "." && fileExists(apikey) && fileExists(apicrt)
+
 	addr := argp.Get("listen", ":80")
-	logger.Info("listen=[%v]", addr)
+	logger.Info("listen=[%v],https=[%v],apikey=[%v],apicrt=[%v]", addr, tlsEnable, apikey, apicrt)
 
 	r := gin.New()
 	r.Use(candy.WebsocketMiddleware(), api.LoginMiddleware(), api.AdminMiddleware())
@@ -60,7 +71,13 @@ func main() {
 
 	r.NoRoute(frontend.Static)
 
-	if err := r.Run(addr); err != nil {
+	var err error
+	if tlsEnable {
+		err = r.RunTLS(addr, apicrt, apikey)
+	} else {
+		err = r.Run(addr)
+	}
+	if err != nil {
 		logger.Fatal("service run failed: %v", err)
 	}
 }
