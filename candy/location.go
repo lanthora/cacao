@@ -4,13 +4,13 @@ import (
 	"crypto/tls"
 	"net"
 	"net/http"
-	"os"
 	"path"
 
 	"github.com/ipinfo/go/v2/ipinfo"
 	"github.com/ipinfo/go/v2/ipinfo/cache"
 	"github.com/lanthora/cacao/argp"
 	"github.com/lanthora/cacao/logger"
+	"github.com/lanthora/cacao/util"
 	"github.com/oschwald/geoip2-golang"
 )
 
@@ -59,22 +59,9 @@ func ipinfoLocation(ip net.IP) (country, region string, ok bool) {
 	return
 }
 
-func findFileByExtFromDir(dir string, ext string) (string, error) {
-	files, err := os.ReadDir(dir)
-	if err != nil {
-		return "", err
-	}
-	for _, file := range files {
-		if path.Ext(file.Name()) == ext {
-			return file.Name(), nil
-		}
-	}
-	return "", os.ErrNotExist
-}
-
 func mmdbLocation(ip net.IP) (country, region string, ok bool) {
 	storageDir := argp.Get("storage", ".")
-	filename, err := findFileByExtFromDir(storageDir, ".mmdb")
+	filename, err := util.FindFileByExtFromDir(storageDir, ".mmdb")
 	if err != nil {
 		return
 	}

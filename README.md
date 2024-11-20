@@ -9,5 +9,5 @@ Candy Server with WebUI
 cacao
 
 # loglevel=[debug] listen=[127.0.0.1:8080] storage=[/var/lib/cacao]
-cacao --loglevel=debug --listen=127.0.0.1:8080 --stroage=/var/lib/cacao
+cacao --loglevel=debug --listen=127.0.0.1:8080 --storage=/var/lib/cacao
 ```
