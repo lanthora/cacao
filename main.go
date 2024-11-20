@@ -1,12 +1,15 @@
 package main
 
 import (
+	"path"
+
 	"github.com/gin-gonic/gin"
 	"github.com/lanthora/cacao/api"
 	"github.com/lanthora/cacao/argp"
 	"github.com/lanthora/cacao/candy"
 	"github.com/lanthora/cacao/frontend"
 	"github.com/lanthora/cacao/logger"
+	"github.com/lanthora/cacao/util"
 )
 
 func init() {
@@ -14,9 +17,6 @@ func init() {
 }
 
 func main() {
-	addr := argp.Get("listen", ":80")
-	logger.Info("listen=[%v]", addr)
-
 	r := gin.New()
 	r.Use(candy.WebsocketMiddleware(), api.LoginMiddleware(), api.AdminMiddleware())
 
@@ -60,7 +60,20 @@ func main() {
 
 	r.NoRoute(frontend.Static)
 
-	if err := r.Run(addr); err != nil {
-		logger.Fatal("service run failed: %v", err)
+	storageDir := argp.Get("storage", ".")
+	crtFilename, findCrtErr := util.FindFileByExtFromDir(storageDir, ".crt")
+	keyFilename, findKeyErr := util.FindFileByExtFromDir(storageDir, ".key")
+	if findCrtErr == nil && findKeyErr == nil {
+		addr := argp.Get("listen", ":443")
+		logger.Info("listen=[%v]", addr)
+		if err := r.RunTLS(addr, path.Join(storageDir, crtFilename), path.Join(storageDir, keyFilename)); err != nil {
+			logger.Fatal("tls service run failed: %v", err)
+		}
+	} else {
+		addr := argp.Get("listen", ":80")
+		logger.Info("listen=[%v]", addr)
+		if err := r.Run(addr); err != nil {
+			logger.Fatal("service run failed: %v", err)
+		}
 	}
 }

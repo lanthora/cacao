@@ -2,3 +2,5 @@ cacao
 sqlite.db
 cookie
 *.mmdb
+*.crt
+*.key
