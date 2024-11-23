@@ -14,20 +14,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: latest
-      - name: build frontend
-        working-directory: frontend
-        run: |
-          npm install
-          npm run build
       - name: setup go
         uses: actions/setup-go@v5
         with:
           go-version: "stable"
       - name: compile
-        run: |
-          GOOS=linux GOARCH=amd64 go build -ldflags '-w -s' -o cacao-linux-amd64
-          GOOS=linux GOARCH=arm64 go build -ldflags '-w -s' -o cacao-linux-arm64
-          GOOS=linux GOARCH=arm GOARM=7 go build -ldflags '-w -s' -o cacao-linux-armv7
-          GOOS=freebsd GOARCH=amd64 go build -ldflags '-w -s' -o cacao-freebsd-amd64
-        env:
-          CGO_ENABLED: 0
+        run: make all
