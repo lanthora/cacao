@@ -1,4 +1,4 @@
-GOBUILD = env CGO_ENABLED=0 go build -trimpath -ldflags '-w -s' -o cacao
+GOBUILD = CGO_ENABLED=0 go build -trimpath -ldflags '-w -s' -o cacao
 
 default: cacao
 

@@ -2,6 +2,16 @@
 
 Candy Server with WebUI
 
+## Build
+
+```bash
+# build a binary that runs natively
+make
+
+# build multiple platform binaries
+make all
+```
+
 ## Run
 
 ```bash
