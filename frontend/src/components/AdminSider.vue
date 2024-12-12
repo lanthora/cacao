@@ -4,19 +4,19 @@
     <a-menu v-model:selectedKeys="selectedKeys" theme="dark" mode="inline" @click="handleMenuClick">
       <a-menu-item key="setting">
         <setting-outlined />
-        <span class="nav-text">Setting</span>
+        <span class="nav-text">{{ $t('components.sider.setting') }}</span>
       </a-menu-item>
       <a-menu-item key="user">
         <team-outlined />
-        <span class="nav-text">User</span>
+        <span class="nav-text">{{ $t('components.sider.user') }}</span>
       </a-menu-item>
       <a-menu-item key="license">
         <copyright-outlined />
-        <span class="nav-text">License</span>
+        <span class="nav-text">{{ $t('components.sider.license') }}</span>
       </a-menu-item>
       <a-menu-item key="logout">
         <logout-outlined />
-        <span class="nav-text">Logout</span>
+        <span class="nav-text">{{ $t('components.sider.logout') }}</span>
       </a-menu-item>
     </a-menu>
   </a-layout-sider>

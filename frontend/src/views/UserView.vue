@@ -1,22 +1,22 @@
 <template>
-  <a-layout style="min-height: 98vh">
+  <a-layout style="min-height: 100vh">
     <user-sider value="user" />
     <a-layout>
       <a-layout-header :style="{ background: '#fff', padding: 0 }">
-        <a-page-header title="User" sub-title="user information" />
+        <a-page-header :title="$t('user.title')" :sub-title="$t('user.subtitle')" />
       </a-layout-header>
       <a-layout-content :style="{ margin: '24px 16px 0' }">
         <div :style="{ padding: '24px', background: '#fff' }">
           <a-form :label-col="{ style: { width: '150px' } }">
-            <a-form-item label="User Name"> {{ username }} </a-form-item>
-            <a-form-item label="Change Password">
+            <a-form-item :label="$t('user.username')"> {{ username }} </a-form-item>
+            <a-form-item :label="$t('user.changePassword')">
               <a-form :model="passwordState" @finish="changePassword">
                 <a-form-item>
                   <a-input
                     v-model:value="passwordState.old"
                     type="password"
                     autocomplete="new-password"
-                    placeholder="Old Password"
+                    :placeholder="$t('user.oldPassword')"
                   >
                   </a-input>
                 </a-form-item>
@@ -25,7 +25,7 @@
                     v-model:value="passwordState.new"
                     type="password"
                     autocomplete="new-password"
-                    placeholder="New Password"
+                    :placeholder="$t('user.newPassword')"
                   >
                   </a-input>
                 </a-form-item>
@@ -35,7 +35,7 @@
                     html-type="submit"
                     :disabled="passwordState.old === '' || passwordState.new === ''"
                   >
-                    Update
+                    {{ $t('user.update') }}
                   </a-button>
                 </a-form-item>
               </a-form>

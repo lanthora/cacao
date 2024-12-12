@@ -1,6 +1,7 @@
 import { createWebHistory, createRouter } from 'vue-router'
 import { createApp } from 'vue'
 import App from './App.vue'
+import i18n from './i18n/index'
 
 import RegisterView from './views/RegisterView.vue'
 import LoginView from './views/LoginView.vue'
@@ -34,4 +35,7 @@ const router = createRouter({
   routes
 })
 
-createApp(App).use(router).mount('#app')
+const app = createApp(App)
+app.use(router)
+app.use(i18n)
+app.mount('#app')

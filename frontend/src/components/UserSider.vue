@@ -4,27 +4,27 @@
     <a-menu v-model:selectedKeys="selectedKeys" theme="dark" mode="inline" @click="handleMenuClick">
       <a-menu-item key="statistics">
         <bar-chart-outlined />
-        <span class="nav-text">Statistics</span>
+        <span class="nav-text">{{ $t('components.sider.statistics') }}</span>
       </a-menu-item>
       <a-menu-item key="network">
         <apartment-outlined />
-        <span class="nav-text">Network</span>
+        <span class="nav-text">{{ $t('components.sider.network') }}</span>
       </a-menu-item>
       <a-menu-item key="device">
         <desktop-outlined />
-        <span class="nav-text">Device</span>
+        <span class="nav-text">{{ $t('components.sider.device') }}</span>
       </a-menu-item>
       <a-menu-item key="route">
         <thunderbolt-outlined />
-        <span class="nav-text">Route</span>
+        <span class="nav-text">{{ $t('components.sider.route') }}</span>
       </a-menu-item>
       <a-menu-item key="user">
         <user-outlined />
-        <span class="nav-text">User</span>
+        <span class="nav-text">{{ $t('components.sider.user') }}</span>
       </a-menu-item>
       <a-menu-item key="logout">
         <logout-outlined />
-        <span class="nav-text">Logout</span>
+        <span class="nav-text">{{ $t('components.sider.logout') }}</span>
       </a-menu-item>
     </a-menu>
   </a-layout-sider>

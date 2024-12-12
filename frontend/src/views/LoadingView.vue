@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <a-spin size="large" />
+    <a-spin :tip="$t('loading.title')" size="large" />
   </div>
 </template>
 

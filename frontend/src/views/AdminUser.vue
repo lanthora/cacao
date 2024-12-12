@@ -1,15 +1,18 @@
 <template>
-  <a-layout style="min-height: 98vh">
+  <a-layout style="min-height: 100vh">
     <admin-sider value="user" />
     <a-layout>
       <a-layout-header :style="{ background: '#fff', padding: 0 }">
-        <a-page-header title="User" sub-title="user management" />
+        <a-page-header :title="$t('adminUser.title')" :sub-title="$t('adminUser.subtitle')" />
       </a-layout-header>
       <a-layout-content :style="{ margin: '24px 16px 0' }">
         <div :style="{ padding: '24px', background: '#fff' }">
           <a-form :model="userState">
             <a-form-item>
-              <a-input v-model:value="userState.username" placeholder="Username">
+              <a-input 
+                v-model:value="userState.username" 
+                :placeholder="$t('adminUser.placeholder.username')"
+              >
                 <template #prefix><UserOutlined style="color: rgba(0, 0, 0, 0.25)" /></template>
               </a-input>
             </a-form-item>
@@ -18,7 +21,7 @@
                 v-model:value="userState.password"
                 type="password"
                 autocomplete="new-password"
-                placeholder="Password"
+                :placeholder="$t('adminUser.placeholder.password')"
               >
                 <template #prefix><LockOutlined style="color: rgba(0, 0, 0, 0.25)" /></template>
               </a-input>
@@ -30,14 +33,14 @@
                   @click="adminAddUser"
                   :disabled="userState.username === '' || userState.password === ''"
                 >
-                  Create
+                  {{ $t('adminUser.create') }}
                 </a-button>
                 <a-button
                   type="primary"
                   @click="adminUpdateUserPassword"
                   :disabled="userState.username === '' || userState.password === ''"
                 >
-                  Update
+                  {{ $t('adminUser.update') }}
                 </a-button>
               </a-space>
             </a-form-item>
@@ -49,12 +52,14 @@
               <template v-if="column.key === 'action'">
                 <a-space wrap>
                   <a-popconfirm
-                    title="Are you sure delete this user?"
-                    ok-text="Yes"
-                    cancel-text="No"
+                    :title="$t('adminUser.confirmDelete')"
+                    :ok-text="$t('adminUser.yes')"
+                    :cancel-text="$t('adminUser.no')"
                     @confirm="deleteUser(record.userid)"
                   >
-                    <a-button danger type="primary" size="small"> Delete </a-button>
+                    <a-button danger type="primary" size="small">
+                      {{ $t('adminUser.delete') }}
+                    </a-button>
                   </a-popconfirm>
                 </a-space>
               </template>
@@ -70,7 +75,10 @@
 <script setup>
 import { message } from 'ant-design-vue'
 import axios from 'axios'
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const formatRxTx = (value) => {
   var cnt = 0
@@ -117,57 +125,57 @@ const adminUpdateUserPassword = async () => {
   }
 }
 
-const userColumns = [
+const userColumns = computed(() => [
   {
-    title: 'Username',
+    title: t('adminUser.columns.username'),
     dataIndex: 'username',
     key: 'username',
     align: 'center'
   },
   {
-    title: 'Role',
+    title: t('adminUser.columns.role'),
     dataIndex: 'role',
     key: 'role',
     align: 'center'
   },
   {
-    title: 'Network',
+    title: t('adminUser.columns.network'),
     dataIndex: 'netnum',
     key: 'netnum',
     align: 'center'
   },
   {
-    title: 'Device',
+    title: t('adminUser.columns.device'),
     dataIndex: 'devnum',
     key: 'devnum',
     align: 'center'
   },
   {
-    title: 'RX',
+    title: t('adminUser.columns.rx'),
     dataIndex: 'rxsum',
     key: 'rxsum',
     customRender: (text) => formatRxTx(text.value),
     align: 'center'
   },
   {
-    title: 'TX',
+    title: t('adminUser.columns.tx'),
     dataIndex: 'txsum',
     key: 'txsum',
     customRender: (text) => formatRxTx(text.value),
     align: 'center'
   },
   {
-    title: 'Last Active At',
+    title: t('adminUser.columns.lastActiveTime'),
     dataIndex: 'lastActiveTime',
     key: 'lastActiveTime',
     align: 'center'
   },
   {
-    title: 'Action',
+    title: t('adminUser.columns.action'),
     key: 'action',
     align: 'center'
   }
-]
+])
 
 const userSource = ref([])
 
