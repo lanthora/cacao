@@ -1,3 +1,3 @@
 <template>
-  <a-layout-footer style="text-align: center">Cacao © 2024</a-layout-footer>
+  <a-layout-footer style="text-align: center">{{ $t('components.footer.copyright') }}</a-layout-footer>
 </template>

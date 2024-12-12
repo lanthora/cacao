@@ -1,41 +1,41 @@
 <template>
-  <a-layout style="min-height: 98vh">
+  <a-layout style="min-height: 100vh">
     <admin-sider value="setting" />
     <a-layout>
       <a-layout-header :style="{ background: '#fff', padding: 0 }">
-        <a-page-header title="Setting" sub-title="system configuration" />
+        <a-page-header :title="$t('adminSetting.title')" :sub-title="$t('adminSetting.subtitle')" />
       </a-layout-header>
       <a-layout-content :style="{ margin: '24px 16px 0' }">
         <div :style="{ padding: '24px', background: '#fff' }">
           <a-form :label-col="{ style: { width: '200px' } }">
-            <a-form-item label="Registration Allowed">
+            <a-form-item :label="$t('adminSetting.register.allowed')">
               <a-switch v-model:checked="openRegister" @change="setOpenRegisterConfig" />
             </a-form-item>
-            <a-form-item label="Registration Interval">
+            <a-form-item :label="$t('adminSetting.register.interval')">
               <a-input-number
                 v-model:value="registerInterval"
                 :controls="false"
                 @change="setRegisterIntervalConfig"
               >
-                <template #addonAfter> mins </template>
+                <template #addonAfter> {{ $t('adminSetting.register.intervalUnit') }} </template>
               </a-input-number>
             </a-form-item>
             <a-divider />
-            <a-form-item label="Auto Clean User">
+            <a-form-item :label="$t('adminSetting.userClean.auto')">
               <a-switch v-model:checked="autoCleanUser" @change="setAutoCleanUserConfig" />
             </a-form-item>
-            <a-form-item label="Inactive User Threshold">
+            <a-form-item :label="$t('adminSetting.userClean.threshold')">
               <a-input-number
                 v-model:value="inactiveUserThreshold"
                 :controls="false"
                 @change="setInactiveUserThresholdConfig"
               >
-                <template #addonAfter> days </template>
+                <template #addonAfter> {{ $t('adminSetting.userClean.thresholdUnit') }} </template>
               </a-input-number>
             </a-form-item>
-            <a-form-item label="Manual Clean">
+            <a-form-item :label="$t('adminSetting.userClean.manual')">
               <a-button danger type="primary" size="small" @click="cleanInactiveUser">
-                Clean
+                {{ $t('adminSetting.userClean.clean') }}
               </a-button>
             </a-form-item>
           </a-form>
@@ -47,9 +47,12 @@
 </template>
 
 <script setup>
-import { message } from 'ant-design-vue'
 import axios from 'axios'
-import { ref, onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
+import { message } from 'ant-design-vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const openRegister = ref()
 const registerInterval = ref()
@@ -144,7 +147,7 @@ const cleanInactiveUser = async () => {
   const response = await axios.post('/api/admin/cleanInactiveUser')
   const status = response.data.status
   if (status == 0) {
-    message.success('success')
+    message.success(t('adminSetting.userClean.success'))
   }
 }
 </script>

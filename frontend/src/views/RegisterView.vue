@@ -7,16 +7,30 @@
       class="register-form"
       @finish="onFinish"
     >
-      <a-form-item name="username" :rules="[{ required: true, message: 'Input your username' }]">
-        <a-input v-model:value="registerState.username">
+      <a-form-item 
+        name="username" 
+        :rules="[{ required: true, message: $t('register.inputUsername') }]"
+      >
+        <a-input 
+          v-model:value="registerState.username"
+          :placeholder="$t('register.username')"
+        >
           <template #prefix>
             <UserOutlined class="site-form-item-icon" />
           </template>
         </a-input>
       </a-form-item>
 
-      <a-form-item name="password" :rules="[{ required: true, message: 'Input your password' }]">
-        <a-input type="password" autocomplete="new-password" v-model:value="registerState.password">
+      <a-form-item 
+        name="password" 
+        :rules="[{ required: true, message: $t('register.inputPassword') }]"
+      >
+        <a-input 
+          type="password" 
+          autocomplete="new-password" 
+          v-model:value="registerState.password"
+          :placeholder="$t('register.password')"
+        >
           <template #prefix>
             <LockOutlined class="site-form-item-icon" />
           </template>
@@ -25,7 +39,7 @@
 
       <a-form-item>
         <a-button type="primary" html-type="submit" class="register-form-button">
-          Register
+          {{ $t('register.register') }}
         </a-button>
       </a-form-item>
     </a-form>

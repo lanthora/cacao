@@ -1,45 +1,56 @@
 <template>
-  <a-layout style="min-height: 98vh">
+  <a-layout style="min-height: 100vh">
     <user-sider value="network" />
     <a-layout>
       <a-layout-header :style="{ background: '#fff', padding: 0 }">
-        <a-page-header title="Network" sub-title="create and manage private networks" />
+        <a-page-header :title="$t('network.title')" :sub-title="$t('network.subtitle')" />
       </a-layout-header>
       <a-layout-content :style="{ margin: '24px 16px 0' }">
         <div :style="{ padding: '24px', background: '#fff' }">
           <a-space style="margin-bottom: 16px">
-            <a-button type="primary" @click="openNetDialog(null)"> Add </a-button>
+            <a-button type="primary" @click="openNetDialog(null)">
+              {{ $t('network.add') }}
+            </a-button>
           </a-space>
           <a-table :columns="netColumns" :dataSource="netSource" :scroll="{ x: 'max-content' }">
             <template #bodyCell="{ column, record }">
               <template v-if="column.key === 'action'">
                 <a-space wrap>
                   <a-button type="primary" size="small" @click="openNetDialog(record)">
-                    Edit
+                    {{ $t('network.edit') }}
                   </a-button>
                   <a-button danger type="primary" size="small" @click="deleteNet(record)">
-                    Delete
+                    {{ $t('network.delete') }}
                   </a-button>
                 </a-space>
               </template>
             </template>
           </a-table>
         </div>
-        <a-modal v-model:open="netDialogOpen" title="Network" @ok="handleNetDialog">
+        <a-modal v-model:open="netDialogOpen" :title="$t('network.modalTitle')" @ok="handleNetDialog">
           <a-form :model="netDialogState" :style="{ margin: '24px 0 0' }">
             <a-form-item>
-              <a-input v-model:value="netDialogState.netname" placeholder="Netname"> </a-input>
+              <a-input 
+                v-model:value="netDialogState.netname" 
+                :placeholder="$t('network.inputNetname')"
+              />
             </a-form-item>
             <a-form-item>
-              <a-input v-model:value="netDialogState.password" placeholder="Password"> </a-input>
+              <a-input 
+                v-model:value="netDialogState.password" 
+                :placeholder="$t('network.inputPassword')"
+              />
             </a-form-item>
             <a-form-item>
-              <a-input v-model:value="netDialogState.dhcp" placeholder="DHCP"> </a-input>
+              <a-input 
+                v-model:value="netDialogState.dhcp" 
+                :placeholder="$t('network.inputDhcp')"
+              />
             </a-form-item>
             <a-form-item>
-              <a-select v-model:value="netDialogState.broadcast" placeholder="Broadcast">
-                <a-select-option value="true">Enable</a-select-option>
-                <a-select-option value="false">Disable</a-select-option>
+              <a-select v-model:value="netDialogState.broadcast" :placeholder="$t('network.broadcast')">
+                <a-select-option value="true">{{ $t('network.enable') }}</a-select-option>
+                <a-select-option value="false">{{ $t('network.disable') }}</a-select-option>
               </a-select>
             </a-form-item>
             <a-form-item>
@@ -47,8 +58,8 @@
                 style="width: 100%"
                 :controls="false"
                 v-model:value="netDialogState.lease"
-                placeholder="Lease"
-              ></a-input-number>
+                :placeholder="$t('network.inputLease')"
+              />
             </a-form-item>
           </a-form>
         </a-modal>
@@ -60,49 +71,52 @@
 
 <script setup>
 import axios from 'axios'
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
-const netColumns = [
+const { t } = useI18n()
+
+const netColumns = computed(() => [
   {
-    title: 'Net Name',
+    title: t('network.netName'),
     dataIndex: 'netname',
     key: 'netname',
     align: 'center',
     size: '150px'
   },
   {
-    title: 'Password',
+    title: t('network.password'),
     dataIndex: 'password',
     key: 'password',
     align: 'center'
   },
   {
-    title: 'DHCP',
+    title: t('network.dhcp'),
     dataIndex: 'dhcp',
     key: 'dhcp',
     align: 'center'
   },
   {
-    title: 'Broadcast',
+    title: t('network.broadcast'),
     dataIndex: 'broadcast',
     key: 'broadcast',
     align: 'center',
     customRender: (text) => {
-      return text.value ? 'true' : 'false'
+      return text.value ? t('network.enable') : t('network.disable')
     }
   },
   {
-    title: 'Lease',
+    title: t('network.lease'),
     dataIndex: 'lease',
     key: 'lease',
     align: 'center'
   },
   {
-    title: 'Action',
+    title: t('network.action'),
     key: 'action',
     align: 'center'
   }
-]
+])
 
 const netDialogOpen = ref(false)
 

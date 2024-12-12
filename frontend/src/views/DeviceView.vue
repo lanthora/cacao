@@ -1,9 +1,9 @@
 <template>
-  <a-layout style="min-height: 98vh">
+  <a-layout style="min-height: 100vh">
     <user-sider value="device" />
     <a-layout>
       <a-layout-header :style="{ background: '#fff', padding: 0 }">
-        <a-page-header title="Device" sub-title="view and manage devices" />
+        <a-page-header :title="$t('device.title')" :sub-title="$t('device.subtitle')" />
       </a-layout-header>
       <a-layout-content :style="{ margin: '24px 16px 0' }">
         <div :style="{ padding: '24px', background: '#fff' }">
@@ -16,12 +16,14 @@
               <template v-if="column.key === 'action'">
                 <a-space wrap>
                   <a-popconfirm
-                    title="Are you sure delete this device?"
-                    ok-text="Yes"
-                    cancel-text="No"
+                    :title="$t('device.confirmDelete')"
+                    :ok-text="$t('device.yes')"
+                    :cancel-text="$t('device.no')"
                     @confirm="deleteDevice(record)"
                   >
-                    <a-button danger type="primary" size="small"> Delete </a-button>
+                    <a-button danger type="primary" size="small">
+                      {{ $t('device.delete') }}
+                    </a-button>
                   </a-popconfirm>
                 </a-space>
               </template>
@@ -36,17 +38,20 @@
 
 <script setup>
 import axios from 'axios'
-import { onMounted, onBeforeMount, ref } from 'vue'
+import { onMounted, onBeforeMount, ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
-const deviceColumns = [
+const { t } = useI18n()
+
+const deviceColumns = computed(() => [
   {
-    title: 'Host Name',
+    title: t('device.columns.hostname'),
     dataIndex: 'hostname',
     key: 'hostname',
     align: 'center'
   },
   {
-    title: 'Network',
+    title: t('device.columns.network'),
     dataIndex: 'netid',
     key: 'netid',
     align: 'center',
@@ -57,21 +62,21 @@ const deviceColumns = [
     sorter: (a, b) => a.netid - b.netid
   },
   {
-    title: 'IP',
+    title: t('device.columns.ip'),
     dataIndex: 'ip',
     key: 'ip',
     align: 'center',
     sorter: (a, b) => compareDottedDecimal(a.ip, b.ip)
   },
   {
-    title: 'Country',
+    title: t('device.columns.country'),
     dataIndex: 'country',
     key: 'country',
     align: 'center',
     sorter: (a, b) => a.country.localeCompare(b.country)
   },
   {
-    title: 'Region',
+    title: t('device.columns.region'),
     dataIndex: 'region',
     key: 'region',
     align: 'center',
@@ -84,7 +89,7 @@ const deviceColumns = [
     }
   },
   {
-    title: 'RX',
+    title: t('device.columns.rx'),
     dataIndex: 'rx',
     key: 'rx',
     align: 'center',
@@ -92,7 +97,7 @@ const deviceColumns = [
     sorter: (a, b) => a.rx - b.rx
   },
   {
-    title: 'TX',
+    title: t('device.columns.tx'),
     dataIndex: 'tx',
     key: 'tx',
     align: 'center',
@@ -100,42 +105,42 @@ const deviceColumns = [
     sorter: (a, b) => a.tx - b.tx
   },
   {
-    title: 'Online',
+    title: t('device.columns.online'),
     dataIndex: 'online',
     key: 'online',
     align: 'center',
     customRender: (text) => {
-      return text.value ? 'true' : 'false'
+      return text.value ? t('device.status.online') : t('device.status.offline')
     },
     sorter: (a, b) => a.online - b.online
   },
   {
-    title: 'OS',
+    title: t('device.columns.os'),
     dataIndex: 'os',
     key: 'os',
     align: 'center',
     sorter: (a, b) => a.os.localeCompare(b.os)
   },
   {
-    title: 'Version',
+    title: t('device.columns.version'),
     dataIndex: 'version',
     key: 'version',
     align: 'center',
     sorter: (a, b) => compareDottedDecimal(a.version, b.version)
   },
   {
-    title: 'Last Active At',
+    title: t('device.columns.lastActiveTime'),
     dataIndex: 'lastActiveTime',
     key: 'lastActiveTime',
     align: 'center',
     sorter: (a, b) => a.lastActiveTime.localeCompare(b.lastActiveTime)
   },
   {
-    title: 'Action',
+    title: t('device.columns.action'),
     key: 'action',
     align: 'center'
   }
-]
+])
 
 const formatRxTx = (value) => {
   var cnt = 0
