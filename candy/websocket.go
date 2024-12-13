@@ -16,6 +16,7 @@ import (
 	"github.com/lanthora/cacao/model"
 	"github.com/lanthora/cacao/storage"
 	"github.com/lunixbochs/struc"
+	"gorm.io/gorm"
 )
 
 func WebsocketMiddleware() gin.HandlerFunc {
@@ -267,20 +268,50 @@ func (ws *candysocket) handleDHCPMessage(buffer []byte) error {
 		return err
 	}
 
-	if ws.net.model.DHCP == "" {
-		return fmt.Errorf("dhcp failed: DHCP is not enabled")
-	}
-
-	cidr := func(input []byte) string {
-		return string(input[:bytes.IndexByte(input[:], 0)])
-	}(message.Cidr)
-
 	if ws.dev.model == nil {
 		return fmt.Errorf("dhcp failed: vmac not received")
 	}
+
 	db := storage.Get()
-	ip, ipNet, err := net.ParseCIDR(cidr)
-	needGenNewAddr := func() bool {
+
+	// 检查能否使用数据库中地址, 地址可用时更新响应结果
+	canUseLatestAddress := func() bool {
+		device := model.Device{}
+		if db.Where(&model.Device{NetID: ws.net.model.ID, VMac: ws.dev.model.VMac}).Take(&device).Error != nil {
+			return false
+		}
+		ip := net.ParseIP(device.IP)
+		if ip == nil {
+			return false
+		}
+		ip = ip.To4()
+		if ip == nil {
+			return false
+		}
+
+		if binary.BigEndian.Uint32(ip)&ws.net.mask != ws.net.net {
+			return false
+		}
+		if ws.net.ipConflict(device.IP, ws.dev.model.VMac) {
+			return false
+		}
+
+		ipNet := net.IPNet{IP: ip, Mask: make(net.IPMask, 4)}
+		binary.BigEndian.PutUint32(ipNet.Mask, ws.net.mask)
+		message.Cidr = []byte(ipNet.String())
+		return true
+	}()
+
+	// 根据用户传入的地址检查是否需要生成新地址
+	needGenNewAddress := func() bool {
+		if canUseLatestAddress {
+			return false
+		}
+		cidr := func(input []byte) string {
+			return string(input[:bytes.IndexByte(input[:], 0)])
+		}(message.Cidr)
+
+		ip, ipNet, err := net.ParseCIDR(cidr)
 		if err != nil {
 			return true
 		}
@@ -304,27 +335,21 @@ func (ws *candysocket) handleDHCPMessage(buffer []byte) error {
 		return true
 	}()
 
+	// 用户传入的地址也不可用时, 生成一个新地址, 并更新响应结果
 	var oldHost = ws.net.host
-	for needGenNewAddr {
-		count := int64(0)
-		db.Model(&model.Device{}).Where(&model.Device{NetID: ws.net.model.ID, IP: ws.net.updateHost()}).Count(&count)
-		if count == 0 {
+	for needGenNewAddress {
+		device := &model.Device{NetID: ws.net.model.ID, IP: ws.net.updateHost()}
+		if db.Where(device).Take(&device).Error == gorm.ErrRecordNotFound {
+			ipNet := net.IPNet{IP: make(net.IP, 4), Mask: make(net.IPMask, 4)}
+			binary.BigEndian.PutUint32(ipNet.IP, ws.net.net|ws.net.host)
+			binary.BigEndian.PutUint32(ipNet.Mask, ws.net.mask)
+			message.Cidr = []byte(ipNet.String())
 			break
 		}
 		if oldHost == ws.net.host {
 			ws.writeCloseMessage("not enough address")
 			return fmt.Errorf("dhcp failed: not enough address")
 		}
-	}
-
-	if needGenNewAddr {
-		ipNet := net.IPNet{
-			IP:   make(net.IP, 4),
-			Mask: make(net.IPMask, 4),
-		}
-		binary.BigEndian.PutUint32(ipNet.IP, ws.net.net|ws.net.host)
-		binary.BigEndian.PutUint32(ipNet.Mask, ws.net.mask)
-		message.Cidr = []byte(ipNet.String())
 	}
 
 	var output bytes.Buffer
