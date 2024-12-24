@@ -39,6 +39,24 @@ func (d *Device) Save() {
 	}
 }
 
+func (d *Device) SaveRxTxOnline() {
+	db := storage.Get()
+	if d.ID == 0 {
+		db.Create(d)
+	} else {
+		db.Model(d).Select("rx", "tx", "online").Updates(d)
+	}
+}
+
+func (d *Device) SaveOsVersionHostname() {
+	db := storage.Get()
+	if d.ID == 0 {
+		db.Create(d)
+	} else {
+		db.Model(d).Select("os", "version", "hostname").Updates(d)
+	}
+}
+
 func (d *Device) Delete() {
 	db := storage.Get()
 	db.Delete(d)
