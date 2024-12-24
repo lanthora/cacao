@@ -54,7 +54,7 @@ func flush() {
 		for _, ws := range n.ipWsMap {
 			if ws.dev.model.Online {
 				hasDeviceOnline = true
-				ws.dev.model.Save()
+				ws.dev.model.SaveRxTxOnline()
 			}
 		}
 		if hasDeviceOnline && !refreshedUsers.ContainsOne(n.model.UserID) {

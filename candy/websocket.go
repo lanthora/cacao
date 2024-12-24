@@ -82,7 +82,7 @@ func handleWebsocket(c *gin.Context) {
 
 	if ws.dev != nil && ws.dev.model.Online {
 		ws.dev.model.Online = false
-		ws.dev.model.Save()
+		ws.dev.model.SaveRxTxOnline()
 
 		net.ipWsMapMutex.Lock()
 		defer net.ipWsMapMutex.Unlock()
@@ -144,7 +144,7 @@ func (ws *candysocket) handlePingMessage(buffer string) error {
 	}
 
 	if ws.dev.model.Online {
-		ws.dev.model.Save()
+		ws.dev.model.SaveOsVersionHostname()
 	}
 
 	ws.writePong([]byte(buffer))
@@ -181,7 +181,7 @@ func (ws *candysocket) handleAuthMessage(buffer []byte) error {
 
 	if oldws, ok := ws.net.ipWsMap[message.IP]; ok {
 		oldws.dev.model.Online = false
-		oldws.dev.model.Save()
+		oldws.dev.model.SaveRxTxOnline()
 		oldws.writeCloseMessage("vmac conflict")
 		oldws.conn.Close()
 	}
