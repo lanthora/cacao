@@ -8,6 +8,7 @@ import (
 
 	"github.com/ipinfo/go/v2/ipinfo"
 	"github.com/ipinfo/go/v2/ipinfo/cache"
+	"github.com/ipipdotnet/ipdb-go"
 	"github.com/lanthora/cacao/argp"
 	"github.com/lanthora/cacao/logger"
 	"github.com/lanthora/cacao/util"
@@ -17,8 +18,10 @@ import (
 func GetLocation(ip net.IP) (country, region string) {
 	if !ip.IsPrivate() {
 		ok := false
-		if country, region, ok = mmdbLocation(ip); !ok {
-			country, region, _ = ipinfoLocation(ip)
+		if country, region, ok = ipdbLocation(ip); !ok {
+			if country, region, ok = mmdbLocation(ip); !ok {
+				country, region, _ = ipinfoLocation(ip)
+			}
 		}
 	}
 	return
@@ -82,6 +85,36 @@ func mmdbLocation(ip net.IP) (country, region string, ok bool) {
 	if len(record.Subdivisions) > 0 {
 		region = record.Subdivisions[0].Names["en"]
 	}
+	ok = true
+	return
+}
+
+func ipdbLocation(ip net.IP) (country, region string, ok bool) {
+	storageDir := argp.Get("storage", ".")
+	filename, err := util.FindFileByExtFromDir(storageDir, ".ipdb")
+	if err != nil {
+		return
+	}
+
+	db, err := ipdb.NewCity(path.Join(storageDir, filename))
+	if err != nil {
+		logger.Debug("open ipdb failed: %v", err)
+		return
+	}
+
+	info, err := db.FindInfo(ip.String(), "CN")
+	if err != nil {
+		logger.Debug("get location from ipdb failed: %v", err)
+		return
+	}
+
+	country = info.CountryCode
+	region = info.RegionName
+
+	if region == "" && info.CityName != "" {
+		region = info.CityName
+	}
+
 	ok = true
 	return
 }
