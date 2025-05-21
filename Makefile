@@ -2,7 +2,7 @@ GOBUILD = CGO_ENABLED=0 go build -trimpath -ldflags '-w -s' -o cacao
 
 default: cacao
 
-all: linux-amd64 linux-arm64 linux-armv7 freebsd-amd64
+all: linux-amd64 linux-arm64 linux-armv7 freebsd-amd64 windows-amd64
 
 frontend:
 	cd frontend && npm run build || (npm install && npm run build)
@@ -22,4 +22,8 @@ linux-armv7: frontend
 freebsd-amd64: frontend
 	GOOS=freebsd GOARCH=amd64 $(GOBUILD)-$@
 
-.PHONY: default all frontend cacao linux-amd64 linux-arm64 linux-armv7 freebsd-amd64
+windows-amd64: frontend
+	GOOS=windows GOARCH=amd64 $(GOBUILD)-$@
+
+.PHONY: default all frontend cacao linux-amd64 linux-arm64 linux-armv7 freebsd-amd64 windows-amd64
+
