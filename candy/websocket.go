@@ -215,10 +215,6 @@ func (ws *candysocket) handleForwardMessage(buffer []byte) error {
 		return err
 	}
 
-	if ws.dev.ip != message.Src {
-		return fmt.Errorf("forward failed: source address does not match login information")
-	}
-
 	ws.dev.model.TX += uint64(len(buffer))
 
 	ws.net.ipWsMapMutex.RLock()
