@@ -85,7 +85,7 @@ func (n *Net) ipConflict(ip, vmac string) bool {
 }
 
 func (n *Net) checkAuthMessage(message *AuthMessage) error {
-	if absInt64(time.Now().Unix(), message.Timestamp) > 30 {
+	if absInt64(time.Now().Unix(), message.Timestamp) > 300 {
 		return fmt.Errorf("auth check failed: timestamp: %v", message.Timestamp)
 	}
 
@@ -103,7 +103,7 @@ func (n *Net) checkAuthMessage(message *AuthMessage) error {
 }
 
 func (n *Net) checkDHCPMessage(message *DHCPMessage) error {
-	if absInt64(time.Now().Unix(), message.Timestamp) > 30 {
+	if absInt64(time.Now().Unix(), message.Timestamp) > 300 {
 		return fmt.Errorf("dhcp check failed: timestamp: %v", message.Timestamp)
 	}
 
@@ -120,7 +120,7 @@ func (n *Net) checkDHCPMessage(message *DHCPMessage) error {
 }
 
 func (n *Net) checkVMacMessage(message *VMacMessage) error {
-	if absInt64(time.Now().Unix(), message.Timestamp) > 30 {
+	if absInt64(time.Now().Unix(), message.Timestamp) > 300 {
 		return fmt.Errorf("vmac check failed: timestamp: %v", message.Timestamp)
 	}
 
