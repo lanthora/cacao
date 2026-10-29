@@ -30,6 +30,11 @@ An empty URL or an interval of 0 disables automatic updates. Save settings befor
 using **Update now**. Automatic updates are checked at startup and hourly; failures
 are retried on the next check. Downloads are limited to 256 MiB and five minutes.
 
+HTTPS downloads use the system's trusted CA certificates. The Docker image includes
+a CA bundle; native installations need the operating system's CA certificates.
+For a private CA or an HTTPS inspection proxy, mount a PEM bundle containing the
+required trusted roots and set `SSL_CERT_FILE` to its path in the container.
+
 Validated versions are published under `storage/geodb/ipdb/` and
 `storage/geodb/mmdb/`. Failed downloads leave the current version usable. Startup
 recovers the newest valid published version; old managed versions are cleaned up.
