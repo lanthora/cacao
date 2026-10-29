@@ -47,6 +47,19 @@ support the CN language and contain `country_code` plus `region_name` or
 `city_name`. MMDB files must support GeoIP2 City lookups. Updates affect subsequent
 lookups; existing device locations are refreshed by normal device activity.
 
+## Device virtual IP changes
+
+Use **Edit** on the Devices page to change a device's virtual IPv4 address.
+The new address must be a host address within its network's DHCP range and must
+not belong to another device, including an offline device. Only the network owner
+can make this change. Saving an unchanged address leaves the connection intact.
+
+For a changed address, Cacao saves the reservation and disconnects only that device;
+clients obtaining their IP dynamically receive the saved address when they
+reconnect. Offline devices receive it on their next connection. Clients configured
+with a static IP continue to use their own configuration. No schema migration or
+client protocol change is required.
+
 ## Database reliability
 
 Database operations use bounded SQLite transactions, checked errors and explicit

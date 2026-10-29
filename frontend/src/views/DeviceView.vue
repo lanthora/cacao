@@ -6,6 +6,7 @@
       <a-layout-content :style="{ margin: '24px 16px 0' }">
         <div :style="{ padding: '24px', background: '#fff' }">
           <a-table
+            row-key="devid"
             :columns="deviceColumns"
             :dataSource="deviceSource"
             :scroll="{ x: 'max-content' }"
@@ -13,6 +14,9 @@
             <template #bodyCell="{ column, record }">
               <template v-if="column.key === 'action'">
                 <a-space wrap>
+                  <a-button type="primary" size="small" @click="openDeviceDialog(record)">
+                    {{ $t('device.edit') }}
+                  </a-button>
                   <a-popconfirm
                     :title="$t('device.confirmDelete')"
                     :ok-text="$t('device.yes')"
@@ -28,6 +32,38 @@
             </template>
           </a-table>
         </div>
+        <a-modal
+          v-model:open="deviceDialogOpen"
+          :title="$t('device.editTitle')"
+          :ok-text="$t('device.save')"
+          :cancel-text="$t('device.cancel')"
+          :confirm-loading="deviceSaving"
+          :closable="!deviceSaving"
+          :mask-closable="!deviceSaving"
+          :keyboard="!deviceSaving"
+          :cancel-button-props="{ disabled: deviceSaving }"
+          @ok="saveDevice"
+        >
+          <a-alert type="info" show-icon :message="$t('device.editHint')" />
+          <a-form layout="vertical" style="margin-top: 20px">
+            <a-form-item :label="$t('device.columns.hostname')">
+              <a-input :value="deviceDialog.hostname" disabled />
+            </a-form-item>
+            <a-form-item :label="$t('device.columns.network')">
+              <a-input :value="getNetByID(deviceDialog.netid)?.netname || ''" disabled />
+            </a-form-item>
+            <a-form-item :label="$t('device.addressRange')">
+              <a-input :value="getNetByID(deviceDialog.netid)?.dhcp || ''" disabled />
+            </a-form-item>
+            <a-form-item
+              :label="$t('device.columns.ip')"
+              :validate-status="deviceError ? 'error' : ''"
+              :help="deviceError"
+            >
+              <a-input v-model:value="deviceDialog.ip" :disabled="deviceSaving" />
+            </a-form-item>
+          </a-form>
+        </a-modal>
       </a-layout-content>
       <footer-view />
     </a-layout>
@@ -151,6 +187,53 @@ const formatRxTx = (value) => {
 }
 
 const deviceSource = ref([])
+const deviceDialogOpen = ref(false)
+const deviceSaving = ref(false)
+const deviceError = ref('')
+const deviceDialog = ref({ devid: 0, netid: 0, hostname: '', ip: '' })
+
+const openDeviceDialog = (record) => {
+  deviceDialog.value = { ...record }
+  deviceError.value = ''
+  deviceDialogOpen.value = true
+}
+
+const saveDevice = async () => {
+  if (deviceSaving.value) return
+  const ip = deviceDialog.value.ip.trim()
+  const octets = ip.split('.')
+  if (
+    octets.length !== 4 ||
+    !octets.every((octet) => /^(0|[1-9]\d{0,2})$/.test(octet) && Number(octet) <= 255)
+  ) {
+    deviceError.value = t('device.invalidIP')
+    return
+  }
+  deviceSaving.value = true
+  deviceError.value = ''
+  try {
+    const response = await axios.post('/api/device/update', {
+      devid: deviceDialog.value.devid,
+      ip
+    })
+    if (response.data.status !== 0) {
+      deviceError.value = t(
+        {
+          'invalid ip address': 'device.invalidIP',
+          'device ip already in use': 'device.ipConflict',
+          'device not exists': 'device.notExists'
+        }[response.data.msg] || 'device.updateFailed'
+      )
+      return
+    }
+    deviceDialogOpen.value = false
+    await updateDeviceSource()
+  } catch {
+    deviceError.value = t('auth.requestFailed')
+  } finally {
+    deviceSaving.value = false
+  }
+}
 
 const updateDeviceSource = async () => {
   const response = await axios.post('/api/device/show')
@@ -161,7 +244,7 @@ const updateDeviceSource = async () => {
   }
 }
 
-const netMap = ref()
+const netMap = ref(new Map())
 
 const getNetByID = (netid) => {
   return netMap.value.get(netid)

@@ -18,6 +18,10 @@ func databaseError(c *gin.Context, err error, missingCode int) bool {
 		return false
 	}
 	switch {
+	case errors.Is(err, model.ErrInvalidDeviceIP):
+		setErrorCode(c, InvalidIPAddress)
+	case errors.Is(err, model.ErrDeviceIPConflict):
+		setErrorCode(c, DeviceIPConflict)
 	case errors.Is(err, gorm.ErrRecordNotFound):
 		setErrorCode(c, missingCode)
 	case errors.Is(err, model.ErrUsernameTaken):

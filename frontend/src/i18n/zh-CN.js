@@ -57,6 +57,16 @@ export default {
         inputLease: '请输入租期'
     },
     device: {
+        edit: '编辑',
+        editTitle: '修改虚拟 IP',
+        save: '保存',
+        cancel: '取消',
+        addressRange: '网络地址范围（CIDR）',
+        editHint: '仅对动态获取 IP 的客户端生效，固定 IP 客户端仍使用自身配置。在线设备保存后会断线重连，离线设备下次连接时生效。',
+        invalidIP: '请输入所属网络内有效的 IPv4 主机地址，不能使用网络地址或广播地址。',
+        ipConflict: '该 IP 已被同一网络中的其他设备占用（包括离线设备）。',
+        notExists: '设备不存在或无权修改，请刷新设备列表。',
+        updateFailed: '修改失败，请稍后重试。',
         title: '设备',
         subtitle: '查看和管理设备',
         delete: '删除',

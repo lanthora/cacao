@@ -8,6 +8,7 @@ import (
 
 func init() {
 	statusMessage = make(map[int]string)
+	statusMessage[DeviceIPConflict] = "device ip already in use"
 	statusMessage[GeoDBUpdateBusy] = "database update already in progress"
 	statusMessage[GeoDBUpdateFailed] = "database update failed"
 	statusMessage[Success] = "success"
@@ -59,6 +60,7 @@ const (
 	InvalidInactiveUserThreshold
 	GeoDBUpdateBusy
 	GeoDBUpdateFailed
+	DeviceIPConflict
 )
 
 var statusMessage map[int]string

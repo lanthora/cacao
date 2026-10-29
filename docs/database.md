@@ -66,6 +66,14 @@ runtime-map changes, client closure and success responses. Replacing a network
 retires its old runtime object, including pending unauthenticated connections.
 Socket writes have bounded deadlines to avoid indefinitely blocking runtime changes.
 
+Device IP edits also take `candy.ConfigMu` and the network state lock. Ownership,
+IPv4 host validity and reservations held by other active device records (online
+or offline) are checked inside the write transaction. A changed address, offline
+state and the latest traffic snapshot commit together before the target socket is
+removed and closed. Unchanged addresses leave the connection intact. Per-device
+in-memory revisions reject DHCP offers issued before an edit if their authentication
+arrives afterward. Clients authenticating without DHCP retain their static-IP behavior.
+
 Device session IDs are **in memory only** (`gorm:"-"`), guarded by a per-identity
 operation lock acquired before entering SQLite. Activation publishes a session
 only after commit. Delayed traffic, metadata and offline writes from a replaced

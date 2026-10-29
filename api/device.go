@@ -4,8 +4,25 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/lanthora/cacao/candy"
 	"github.com/lanthora/cacao/model"
 )
+
+func DeviceUpdate(c *gin.Context) {
+	var request struct {
+		DevID uint   `json:"devid" binding:"required"`
+		IP    string `json:"ip" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		setErrorCode(c, InvalidRequest)
+		return
+	}
+	user := c.MustGet("user").(*model.User)
+	device, err := candy.UpdateDeviceIP(c.Request.Context(), user.ID, request.DevID, request.IP)
+	if !databaseError(c, err, DeviceNotExists) {
+		setResponseData(c, gin.H{"devid": device.ID, "ip": device.IP})
+	}
+}
 
 func DeviceShow(c *gin.Context) {
 	user := c.MustGet("user").(*model.User)

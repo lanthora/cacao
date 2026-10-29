@@ -136,11 +136,13 @@ func (ws *candysocket) handleMessage(buffer []byte) error {
 }
 
 type candysocket struct {
-	ctx       *gin.Context
-	conn      *websocket.Conn
-	connMutex sync.Mutex
-	dev       *Device
-	net       *Net
+	dhcpRequested bool
+	dhcpRevision  uint64
+	ctx           *gin.Context
+	conn          *websocket.Conn
+	connMutex     sync.Mutex
+	dev           *Device
+	net           *Net
 }
 
 func (ws *candysocket) updateReadDeadline() error {
@@ -215,6 +217,9 @@ func (ws *candysocket) handleAuthMessage(buffer []byte) error {
 
 	if ws.dev == nil {
 		return fmt.Errorf("auth failed: vmac not received")
+	}
+	if ws.dhcpRequested && ws.dhcpRevision != ws.net.addressRevisions[ws.dev.model.VMac] {
+		return fmt.Errorf("auth failed: DHCP address changed; reconnect")
 	}
 
 	if ws.net.net != ws.net.mask&message.IP || (^ws.net.mask)&(message.IP) == 0 || (^ws.net.mask)&(message.IP+1) == 0 {
@@ -447,9 +452,12 @@ func (ws *candysocket) handleDHCPMessage(buffer []byte) error {
 	}
 
 	var output bytes.Buffer
-	struc.Pack(&output, message)
-	ws.writeMessage(output.Bytes())
-	return nil
+	if err := struc.Pack(&output, message); err != nil {
+		return err
+	}
+	ws.dhcpRequested = true
+	ws.dhcpRevision = ws.net.addressRevisions[ws.dev.model.VMac]
+	return ws.writeMessage(output.Bytes())
 }
 
 func (ws *candysocket) handlePeerConnMessage(buffer []byte) error {
@@ -498,6 +506,8 @@ func (ws *candysocket) handleVMacMessage(buffer []byte) error {
 		return err
 	}
 	ws.dev = &Device{model: &model.Device{NetID: ws.net.model.ID, VMac: message.VMac}}
+	ws.dhcpRequested = false
+	ws.dhcpRevision = 0
 	return nil
 }
 

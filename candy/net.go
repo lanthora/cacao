@@ -20,11 +20,12 @@ import (
 )
 
 type Net struct {
-	stateMu      sync.RWMutex
-	closed       bool
-	model        *model.Net
-	ipWsMap      map[uint32]*candysocket
-	ipWsMapMutex sync.RWMutex
+	stateMu          sync.RWMutex
+	closed           bool
+	addressRevisions map[string]uint64 // guarded by stateMu; invalidates pending DHCP offers
+	model            *model.Net
+	ipWsMap          map[uint32]*candysocket
+	ipWsMapMutex     sync.RWMutex
 
 	net  uint32
 	host uint32

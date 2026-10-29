@@ -57,6 +57,16 @@ export default {
         inputLease: 'Please input lease time'
     },
     device: {
+        edit: 'Edit',
+        editTitle: 'Change virtual IP',
+        save: 'Save',
+        cancel: 'Cancel',
+        addressRange: 'Network range (CIDR)',
+        editHint: 'Applies to clients that obtain an IP dynamically. Clients with a static IP keep their own configuration. Online devices will disconnect and reconnect after saving; offline devices use the change on their next connection.',
+        invalidIP: 'Enter a valid IPv4 host address within this network, excluding the network and broadcast addresses.',
+        ipConflict: 'This IP is already assigned to another device in this network, including offline devices.',
+        notExists: 'Device not found or access denied. Refresh the device list.',
+        updateFailed: 'Update failed. Please try again later.',
         title: 'Device',
         subtitle: 'view and manage devices',
         delete: 'Delete',

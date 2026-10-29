@@ -2,6 +2,8 @@ package model
 
 import (
 	"context"
+	"errors"
+	"net/netip"
 	"sync"
 	"time"
 
@@ -23,6 +25,71 @@ type Device struct {
 	Hostname  string
 	Country   string
 	Region    string
+}
+
+var ErrInvalidDeviceIP = errors.New("invalid device ip")
+var ErrDeviceIPConflict = errors.New("device ip already in use")
+
+// UpdateDeviceIP must be ordered with runtime authentication by the caller.
+// Traffic is a snapshot taken while that network's state lock is held.
+func UpdateDeviceIP(userID, deviceID uint, address string, rx, txBytes uint64, contexts ...context.Context) (Device, bool, error) {
+	var saved Device
+	var updated bool
+	err := writeDB(contexts, func(tx *gorm.DB) error {
+		saved = Device{}
+		updated = false
+		if deviceID == 0 {
+			return gorm.ErrRecordNotFound
+		}
+		if err := tx.First(&saved, deviceID).Error; err != nil {
+			return err
+		}
+		var network Net
+		if err := tx.Where("id = ? AND user_id = ?", saved.NetID, userID).First(&network).Error; err != nil {
+			return err
+		}
+		ip, err := netip.ParseAddr(address)
+		prefix, prefixErr := netip.ParsePrefix(network.DHCP)
+		if err != nil || !ip.Is4() || prefixErr != nil || !prefix.Addr().Is4() || prefix.Bits() > 30 || !prefix.Contains(ip) {
+			return ErrInvalidDeviceIP
+		}
+		base := prefix.Masked().Addr().As4()
+		last := base
+		for bit := prefix.Bits(); bit < 32; bit++ {
+			last[bit/8] |= 1 << (7 - bit%8)
+		}
+		if ip == netip.AddrFrom4(base) || ip == netip.AddrFrom4(last) {
+			return ErrInvalidDeviceIP
+		}
+		var identities int64
+		if err := tx.Model(&Device{}).Where("net_id = ? AND vmac = ?", saved.NetID, saved.VMac).Count(&identities).Error; err != nil {
+			return err
+		}
+		if identities != 1 {
+			return ErrAmbiguousData
+		}
+		var conflicts int64
+		if err := tx.Model(&Device{}).Where("net_id = ? AND ip = ? AND id <> ?", saved.NetID, ip.String(), saved.ID).Count(&conflicts).Error; err != nil {
+			return err
+		}
+		if conflicts > 0 {
+			return ErrDeviceIPConflict
+		}
+		if saved.IP == ip.String() {
+			return nil
+		}
+		if err := changed(tx.Model(&Device{}).Where("id = ?", saved.ID).Updates(map[string]interface{}{
+			"ip": ip.String(), "online": false,
+			"rx": gorm.Expr("max(rx, ?)", rx), "tx": gorm.Expr("max(tx, ?)", txBytes),
+		})); err != nil {
+			return err
+		}
+		saved.IP, saved.Online = ip.String(), false
+		saved.RX, saved.TX = max(saved.RX, rx), max(saved.TX, txBytes)
+		updated = true
+		return nil
+	})
+	return saved, updated, err
 }
 
 func ResetOnlineDevices(contexts ...context.Context) error {

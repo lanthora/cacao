@@ -70,6 +70,7 @@ func main() {
 
 	device := r.Group("/api/device")
 	device.POST("/show", api.DeviceShow)
+	device.POST("/update", api.DeviceUpdate)
 	device.POST("/delete", api.DeviceDelete)
 
 	route := r.Group("/api/route")
