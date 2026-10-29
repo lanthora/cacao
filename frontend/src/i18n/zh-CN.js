@@ -211,7 +211,7 @@ export default {
             logout: '退出'
         },
         footer: {
-            copyright: 'Cacao © 2024'
+            copyright: 'Cacao © {year}'
         }
     }
 } 
