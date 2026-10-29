@@ -1,7 +1,12 @@
 <template>
   <a-layout-header class="page-header">
-    <a-page-header class="page-header-title" :title="title" :sub-title="subtitle" />
-    <language-switch />
+    <a-page-header
+      v-if="title || subtitle"
+      class="page-header-title"
+      :title="title"
+      :sub-title="subtitle"
+    />
+    <div class="page-header-actions"><language-switch /></div>
   </a-layout-header>
 </template>
 
@@ -14,6 +19,7 @@ defineProps({
 
 <style scoped>
 .page-header {
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -26,8 +32,11 @@ defineProps({
   background: #fff;
 }
 
-.page-header > .language-switch {
+.page-header-actions {
+  display: flex;
+  align-items: center;
   margin-left: auto;
+  flex-shrink: 0;
 }
 
 .page-header-title {

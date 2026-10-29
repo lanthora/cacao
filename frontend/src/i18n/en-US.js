@@ -1,15 +1,18 @@
 export default {
+    auth: {
+        requestFailed: "Request failed. Check your connection and try again."
+    },
     login: {
+        noAccount: "Don't have an account?",
         username: 'Username',
         password: 'Password',
         login: 'Log in',
-        register: 'Register',
-        registerNow: 'register now',
         inputUsername: 'Please input your username',
         inputPassword: 'Please input your password',
         or: 'Or'
     },
     register: {
+        haveAccount: "Already have an account?",
         username: 'Username',
         password: 'Password',
         register: 'Register',

@@ -1,103 +1,84 @@
 <template>
-  <div class="container">
-    <div class="register-box">
-      <div class="language-toolbar">
-        <language-switch />
-      </div>
-      <a-form
-        :model="registerState"
-        :hideRequiredMark="true"
-        name="register"
-        class="register-form"
-        @finish="onFinish"
+  <auth-layout :title="$t('register.register')" :error="error">
+    <a-form
+      :model="formState"
+      :hide-required-mark="true"
+      name="register"
+      layout="vertical"
+      size="large"
+      :aria-busy="submitting"
+      @finish="onFinish"
+    >
+      <a-form-item
+        name="username"
+        :rules="[{ required: true, message: $t('register.inputUsername') }]"
       >
-        <a-form-item
-          name="username"
-          :rules="[{ required: true, message: $t('register.inputUsername') }]"
-        >
-          <a-input v-model:value="registerState.username" :placeholder="$t('register.username')">
-            <template #prefix>
-              <UserOutlined class="site-form-item-icon" />
-            </template>
-          </a-input>
-        </a-form-item>
-
-        <a-form-item
-          name="password"
-          :rules="[{ required: true, message: $t('register.inputPassword') }]"
-        >
-          <a-input
-            type="password"
-            autocomplete="new-password"
-            v-model:value="registerState.password"
-            :placeholder="$t('register.password')"
-          >
-            <template #prefix>
-              <LockOutlined class="site-form-item-icon" />
-            </template>
-          </a-input>
-        </a-form-item>
-
-        <a-form-item>
-          <a-button type="primary" html-type="submit" class="register-form-button">
-            {{ $t('register.register') }}
-          </a-button>
-        </a-form-item>
-      </a-form>
-    </div>
-  </div>
+        <a-input
+          v-model:value="formState.username"
+          :placeholder="$t('register.username')"
+          :aria-label="$t('register.username')"
+          autocomplete="username"
+          :disabled="submitting"
+          :autocapitalize="'none'"
+          :spellcheck="false"
+        />
+      </a-form-item>
+      <a-form-item
+        name="password"
+        :rules="[{ required: true, message: $t('register.inputPassword') }]"
+      >
+        <a-input-password
+          v-model:value="formState.password"
+          :placeholder="$t('register.password')"
+          :aria-label="$t('register.password')"
+          autocomplete="new-password"
+          :disabled="submitting"
+        />
+      </a-form-item>
+      <a-form-item>
+        <a-button type="primary" html-type="submit" class="auth-submit" :loading="submitting">{{
+          $t('register.register')
+        }}</a-button>
+      </a-form-item>
+    </a-form>
+    <template #footer>
+      {{ $t('register.haveAccount') }}
+      <router-link to="/login">{{ $t('login.login') }}</router-link>
+    </template>
+  </auth-layout>
 </template>
 
 <script setup>
-import { reactive } from 'vue'
-import axios from 'axios'
+import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-
-const registerState = reactive({
-  username: '',
-  password: ''
-})
+import { useI18n } from 'vue-i18n'
+import axios from 'axios'
+import AuthLayout from '../components/AuthLayout.vue'
 
 const router = useRouter()
+const { t } = useI18n()
+const formState = reactive({ username: '', password: '' })
+const submitting = ref(false)
+const error = ref('')
 
-const userregister = async (username, password) => {
-  const response = await axios.post('/api/user/register', {
-    username: username,
-    password: password
-  })
-
-  const status = response.data.status
-  if (status == 0) {
-    router.push('/')
+const onFinish = async (values) => {
+  if (submitting.value) return
+  submitting.value = true
+  error.value = ''
+  try {
+    const { data } = await axios.post('/api/user/register', {
+      username: values.username,
+      password: values.password
+    })
+    if (data.status === 0) {
+      await router.push('/')
+    } else {
+      error.value = data.msg || t('auth.requestFailed')
+    }
+  } catch {
+    error.value = t('auth.requestFailed')
+  } finally {
+    submitting.value = false
   }
 }
-
-const onFinish = (values) => {
-  userregister(values.username, values.password)
-}
 </script>
-
-<style scoped>
-.container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  box-sizing: border-box;
-  padding: 24px 16px;
-}
-
-.register-box {
-  width: 300px;
-  max-width: 100%;
-}
-
-.language-toolbar {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 24px;
-}
-.register-form-button {
-  width: 100%;
-}
-</style>

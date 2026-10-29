@@ -1,191 +1,84 @@
 <template>
-  <div class="login-container">
-    <div class="login-box">
-      <div class="login-content">
-        <div class="language-toolbar">
-          <language-switch />
-        </div>
-        <div class="logo">
-          <img src="/favicon.ico" alt="Logo" />
-          <h2 class="title">{{ $t('login.login') }}</h2>
-        </div>
-        <a-form
-          :model="loginState"
-          :hideRequiredMark="true"
-          class="login-form"
-          @finish="onFinish"
-        >
-          <a-form-item 
-            name="username" 
-            :rules="[{ required: true, message: $t('login.inputUsername') }]"
-          >
-            <a-input
-              v-model:value="loginState.username"
-              :placeholder="$t('login.username')"
-              size="large"
-            >
-              <template #prefix>
-                <user-outlined class="site-form-item-icon" />
-              </template>
-            </a-input>
-          </a-form-item>
-
-          <a-form-item
-            name="password"
-            :rules="[{ required: true, message: $t('login.inputPassword') }]"
-          >
-            <a-input-password
-              v-model:value="loginState.password"
-              :placeholder="$t('login.password')"
-              size="large"
-            >
-              <template #prefix>
-                <lock-outlined class="site-form-item-icon" />
-              </template>
-            </a-input-password>
-          </a-form-item>
-
-          <a-form-item>
-            <a-button
-              type="primary"
-              html-type="submit"
-              size="large"
-              class="login-button"
-            >
-              {{ $t('login.login') }}
-            </a-button>
-          </a-form-item>
-
-          <div class="register-link">
-            {{ $t('login.register') }}
-            <router-link to="/register" class="link">
-              {{ $t('login.registerNow') }}
-            </router-link>
-          </div>
-        </a-form>
-      </div>
-    </div>
-  </div>
+  <auth-layout :title="$t('login.login')" :error="error">
+    <a-form
+      :model="formState"
+      :hide-required-mark="true"
+      name="login"
+      layout="vertical"
+      size="large"
+      :aria-busy="submitting"
+      @finish="onFinish"
+    >
+      <a-form-item
+        name="username"
+        :rules="[{ required: true, message: $t('login.inputUsername') }]"
+      >
+        <a-input
+          v-model:value="formState.username"
+          :placeholder="$t('login.username')"
+          :aria-label="$t('login.username')"
+          autocomplete="username"
+          :disabled="submitting"
+          :autocapitalize="'none'"
+          :spellcheck="false"
+        />
+      </a-form-item>
+      <a-form-item
+        name="password"
+        :rules="[{ required: true, message: $t('login.inputPassword') }]"
+      >
+        <a-input-password
+          v-model:value="formState.password"
+          :placeholder="$t('login.password')"
+          :aria-label="$t('login.password')"
+          autocomplete="current-password"
+          :disabled="submitting"
+        />
+      </a-form-item>
+      <a-form-item>
+        <a-button type="primary" html-type="submit" class="auth-submit" :loading="submitting">{{
+          $t('login.login')
+        }}</a-button>
+      </a-form-item>
+    </a-form>
+    <template #footer>
+      {{ $t('login.noAccount') }}
+      <router-link to="/register">{{ $t('register.register') }}</router-link>
+    </template>
+  </auth-layout>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import axios from 'axios'
-import { UserOutlined, LockOutlined } from '@ant-design/icons-vue'
+import AuthLayout from '../components/AuthLayout.vue'
 
 const router = useRouter()
-
-const loginState = ref({
-  username: '',
-  password: ''
-})
+const { t } = useI18n()
+const formState = reactive({ username: '', password: '' })
+const submitting = ref(false)
+const error = ref('')
 
 const onFinish = async (values) => {
-  const response = await axios.post('/api/user/login', {
-    username: values.username,
-    password: values.password
-  })
-
-  const status = response.data.status
-  if (status == 0) {
-    router.push('/')
+  if (submitting.value) return
+  submitting.value = true
+  error.value = ''
+  try {
+    const { data } = await axios.post('/api/user/login', {
+      username: values.username,
+      password: values.password
+    })
+    if (data.status === 0) {
+      await router.push('/')
+    } else {
+      error.value = data.msg || t('auth.requestFailed')
+    }
+  } catch {
+    error.value = t('auth.requestFailed')
+  } finally {
+    submitting.value = false
   }
 }
 </script>
-
-<style scoped>
-.login-container {
-  width: 100vw;
-  min-height: 100vh;
-  box-sizing: border-box;
-  padding: 24px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #f5f5f5;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
-    'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
-    'Noto Color Emoji';
-}
-
-.login-box {
-  width: 440px;
-  max-width: 100%;
-  box-sizing: border-box;
-  background: white;
-  border-radius: 8px;
-  padding: 40px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-}
-
-.language-toolbar {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 24px;
-}
-
-.logo {
-  text-align: center;
-  margin-bottom: 30px;
-}
-
-.logo img {
-  width: 48px;
-  height: 48px;
-  margin-bottom: 16px;
-}
-
-.title {
-  color: #1a1a1a;
-  font-size: 24px;
-  font-weight: 500;
-  margin: 0;
-  letter-spacing: -0.5px;
-}
-
-.site-form-item-icon {
-  color: rgba(0, 0, 0, 0.25);
-}
-
-.login-button {
-  width: 100%;
-}
-
-.register-link {
-  margin-top: 16px;
-  text-align: center;
-  font-size: 14px;
-  color: rgba(0, 0, 0, 0.45);
-}
-
-.link {
-  color: #1890ff;
-  text-decoration: none;
-  margin-left: 4px;
-  transition: color 0.3s;
-}
-
-.link:hover {
-  color: #40a9ff;
-}
-
-:deep(.ant-input-affix-wrapper) {
-  border-radius: 6px;
-}
-
-:deep(.ant-form-item) {
-  margin-bottom: 24px;
-}
-
-:deep(.ant-form-item-explain-error) {
-  font-size: 13px;
-}
-
-@media (max-width: 480px) {
-  .login-box {
-    width: 100%;
-    padding: 30px 20px;
-  }
-}
-</style>

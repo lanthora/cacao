@@ -1,15 +1,18 @@
 export default {
+    auth: {
+        requestFailed: "请求失败，请检查网络后重试。"
+    },
     login: {
+        noAccount: "还没有账号？",
         username: '用户名',
         password: '密码',
         login: '登录',
-        register: '注册',
-        registerNow: '现在注册',
         inputUsername: '请输入用户名',
         inputPassword: '请输入密码',
         or: '或者'
     },
     register: {
+        haveAccount: "已有账号？",
         username: '用户名',
         password: '密码',
         register: '注册',
