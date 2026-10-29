@@ -2,9 +2,7 @@
   <a-layout style="min-height: 100vh">
     <admin-sider value="license" />
     <a-layout>
-      <a-layout-header :style="{ background: '#fff', padding: 0 }">
-        <a-page-header :title="$t('adminLicense.title')" :sub-title="$t('adminLicense.subtitle')" />
-      </a-layout-header>
+      <page-header :title="$t('adminLicense.title')" :subtitle="$t('adminLicense.subtitle')" />
       <a-layout-content :style="{ margin: '24px 16px 0' }">
         <div :style="{ padding: '24px', margin: '24px 0px 0px', background: '#fff' }">
           <a-table

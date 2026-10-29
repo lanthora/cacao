@@ -2,9 +2,7 @@
   <a-layout style="min-height: 100vh">
     <user-sider value="user" />
     <a-layout>
-      <a-layout-header :style="{ background: '#fff', padding: 0 }">
-        <a-page-header :title="$t('user.title')" :sub-title="$t('user.subtitle')" />
-      </a-layout-header>
+      <page-header :title="$t('user.title')" :subtitle="$t('user.subtitle')" />
       <a-layout-content :style="{ margin: '24px 16px 0' }">
         <div :style="{ padding: '24px', background: '#fff' }">
           <a-form :label-col="{ style: { width: '150px' } }">

@@ -2,9 +2,7 @@
   <a-layout style="min-height: 100vh">
     <user-sider value="statistics" />
     <a-layout>
-      <a-layout-header :style="{ background: '#fff', padding: 0 }">
-        <a-page-header :title="$t('statistics.title')" :sub-title="$t('statistics.subtitle')" />
-      </a-layout-header>
+      <page-header :title="$t('statistics.title')" :subtitle="$t('statistics.subtitle')" />
       <a-layout-content :style="{ margin: '24px 16px 0' }">
         <div :style="{ padding: '24px', background: '#fff' }">
           <a-row>

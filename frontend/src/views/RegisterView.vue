@@ -1,48 +1,50 @@
 <template>
   <div class="container">
-    <a-form
-      :model="registerState"
-      :hideRequiredMark="true"
-      name="register"
-      class="register-form"
-      @finish="onFinish"
-    >
-      <a-form-item 
-        name="username" 
-        :rules="[{ required: true, message: $t('register.inputUsername') }]"
+    <div class="register-box">
+      <div class="language-toolbar">
+        <language-switch />
+      </div>
+      <a-form
+        :model="registerState"
+        :hideRequiredMark="true"
+        name="register"
+        class="register-form"
+        @finish="onFinish"
       >
-        <a-input 
-          v-model:value="registerState.username"
-          :placeholder="$t('register.username')"
+        <a-form-item
+          name="username"
+          :rules="[{ required: true, message: $t('register.inputUsername') }]"
         >
-          <template #prefix>
-            <UserOutlined class="site-form-item-icon" />
-          </template>
-        </a-input>
-      </a-form-item>
+          <a-input v-model:value="registerState.username" :placeholder="$t('register.username')">
+            <template #prefix>
+              <UserOutlined class="site-form-item-icon" />
+            </template>
+          </a-input>
+        </a-form-item>
 
-      <a-form-item 
-        name="password" 
-        :rules="[{ required: true, message: $t('register.inputPassword') }]"
-      >
-        <a-input 
-          type="password" 
-          autocomplete="new-password" 
-          v-model:value="registerState.password"
-          :placeholder="$t('register.password')"
+        <a-form-item
+          name="password"
+          :rules="[{ required: true, message: $t('register.inputPassword') }]"
         >
-          <template #prefix>
-            <LockOutlined class="site-form-item-icon" />
-          </template>
-        </a-input>
-      </a-form-item>
+          <a-input
+            type="password"
+            autocomplete="new-password"
+            v-model:value="registerState.password"
+            :placeholder="$t('register.password')"
+          >
+            <template #prefix>
+              <LockOutlined class="site-form-item-icon" />
+            </template>
+          </a-input>
+        </a-form-item>
 
-      <a-form-item>
-        <a-button type="primary" html-type="submit" class="register-form-button">
-          {{ $t('register.register') }}
-        </a-button>
-      </a-form-item>
-    </a-form>
+        <a-form-item>
+          <a-button type="primary" html-type="submit" class="register-form-button">
+            {{ $t('register.register') }}
+          </a-button>
+        </a-form-item>
+      </a-form>
+    </div>
   </div>
 </template>
 
@@ -80,11 +82,20 @@ const onFinish = (values) => {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 24px 16px;
 }
 
-.register-form {
-  max-width: 300px;
+.register-box {
+  width: 300px;
+  max-width: 100%;
+}
+
+.language-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 24px;
 }
 .register-form-button {
   width: 100%;

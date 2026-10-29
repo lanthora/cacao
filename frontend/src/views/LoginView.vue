@@ -2,6 +2,9 @@
   <div class="login-container">
     <div class="login-box">
       <div class="login-content">
+        <div class="language-toolbar">
+          <language-switch />
+        </div>
         <div class="logo">
           <img src="/favicon.ico" alt="Logo" />
           <h2 class="title">{{ $t('login.login') }}</h2>
@@ -94,7 +97,9 @@ const onFinish = async (values) => {
 <style scoped>
 .login-container {
   width: 100vw;
-  height: 100vh;
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 24px 16px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -105,11 +110,19 @@ const onFinish = async (values) => {
 }
 
 .login-box {
-  width: 360px;
+  width: 440px;
+  max-width: 100%;
+  box-sizing: border-box;
   background: white;
   border-radius: 8px;
   padding: 40px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+.language-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 24px;
 }
 
 .logo {
@@ -171,7 +184,7 @@ const onFinish = async (values) => {
 
 @media (max-width: 480px) {
   .login-box {
-    width: 90%;
+    width: 100%;
     padding: 30px 20px;
   }
 }
