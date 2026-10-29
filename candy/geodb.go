@@ -36,8 +36,8 @@ type GeoDBUpdater struct {
 	client      *http.Client
 	states      map[string]*geoDBState
 	validate    func(string, string) error
-	getConfig   func(string) (model.GeoDBConfig, error)
-	saveSuccess func(string, time.Time) error
+	getConfig   func(context.Context, string) (model.GeoDBConfig, error)
+	saveSuccess func(context.Context, string, time.Time) error
 }
 
 func NewGeoDBUpdater(root string) *GeoDBUpdater {
@@ -56,7 +56,7 @@ func NewGeoDBUpdater(root string) *GeoDBUpdater {
 			return nil
 		}},
 		states:   map[string]*geoDBState{"ipdb": {}, "mmdb": {}},
-		validate: validateGeoDB, getConfig: model.GetGeoDBConfig, saveSuccess: model.SaveGeoDBSuccess,
+		validate: validateGeoDB, getConfig: model.GetGeoDBConfigContext, saveSuccess: model.SaveGeoDBSuccessContext,
 	}
 }
 
@@ -108,13 +108,13 @@ func (u *GeoDBUpdater) recoverType(kind string) error {
 		s.current = filename
 		// A published filename is durable evidence of success even if the process
 		// stopped between publishing it and saving the database timestamp.
-		c, err := u.getConfig(kind)
+		c, err := u.getConfig(context.Background(), kind)
 		if err != nil {
 			return err
 		}
 		previous, _ := time.Parse(time.RFC3339Nano, c.LastSuccessAt)
 		if at.After(previous) {
-			if err := u.saveSuccess(kind, at); err != nil {
+			if err := u.saveSuccess(context.Background(), kind, at); err != nil {
 				s.pending = &at
 				return err
 			}
@@ -173,12 +173,12 @@ func (u *GeoDBUpdater) update(ctx context.Context, kind string, scheduled bool) 
 	defer s.update.Unlock()
 	// Retry persistence without re-scanning or blocking readers during download.
 	if s.pending != nil {
-		if err := u.saveSuccess(kind, *s.pending); err != nil {
+		if err := u.saveSuccess(ctx, kind, *s.pending); err != nil {
 			return err
 		}
 		s.pending = nil
 	}
-	c, err := u.getConfig(kind)
+	c, err := u.getConfig(ctx, kind)
 	if err != nil {
 		return err
 	}
@@ -254,7 +254,7 @@ func (u *GeoDBUpdater) update(ctx context.Context, kind string, scheduled bool) 
 		_ = dir.Close()
 	}
 	s.pending = &at
-	if err := u.saveSuccess(kind, at); err != nil {
+	if err := u.saveSuccess(ctx, kind, at); err != nil {
 		return fmt.Errorf("database published, but saving update time failed: %w", err)
 	}
 	s.pending = nil

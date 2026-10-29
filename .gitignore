@@ -1,6 +1,9 @@
 cacao
 cacao-*
 sqlite.db
+sqlite.db-journal
+sqlite.db-wal
+sqlite.db-shm
 cookie
 *.mmdb
 *.crt

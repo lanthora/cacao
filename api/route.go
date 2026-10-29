@@ -15,7 +15,10 @@ func notIPv4(ipStr string) bool {
 
 func RouteShow(c *gin.Context) {
 	user := c.MustGet("user").(*model.User)
-	routes := model.GetRoutesByUserID(user.ID)
+	routes, err := model.GetRoutesByUserID(user.ID, c.Request.Context())
+	if databaseError(c, err, Unexpected) {
+		return
+	}
 
 	type routeinfo struct {
 		RouteID  uint   `json:"routeid"`
@@ -48,6 +51,8 @@ func RouteShow(c *gin.Context) {
 }
 
 func RouteInsert(c *gin.Context) {
+	candy.ConfigMu.Lock()
+	defer candy.ConfigMu.Unlock()
 	var request struct {
 		NetID    uint   `json:"netid"`
 		DevAddr  string `json:"devaddr"`
@@ -64,7 +69,10 @@ func RouteInsert(c *gin.Context) {
 	}
 
 	user := c.MustGet("user").(*model.User)
-	netModel := model.GetNetByNetID(request.NetID)
+	netModel, err := model.GetNetByNetID(request.NetID, c.Request.Context())
+	if databaseError(c, err, RouteNotExists) {
+		return
+	}
 	if netModel.UserID != user.ID {
 		setErrorCode(c, RouteNotExists)
 		return
@@ -84,7 +92,9 @@ func RouteInsert(c *gin.Context) {
 		NextHop:  request.NextHop,
 		Priority: request.Priority,
 	}
-	routeModel.Create()
+	if databaseError(c, routeModel.Create(c.Request.Context()), RouteNotExists) {
+		return
+	}
 	candy.ReloadNet(netModel.ID)
 
 	setResponseData(c, gin.H{
@@ -100,6 +110,8 @@ func RouteInsert(c *gin.Context) {
 }
 
 func RouteDelete(c *gin.Context) {
+	candy.ConfigMu.Lock()
+	defer candy.ConfigMu.Unlock()
 	var request struct {
 		RouteID uint `json:"routeid"`
 	}
@@ -109,8 +121,14 @@ func RouteDelete(c *gin.Context) {
 		return
 	}
 
-	routeModel := model.GetRouteByRouteID(request.RouteID)
-	netModel := model.GetNetByNetID(routeModel.NetID)
+	routeModel, err := model.GetRouteByRouteID(request.RouteID, c.Request.Context())
+	if databaseError(c, err, RouteNotExists) {
+		return
+	}
+	netModel, err := model.GetNetByNetID(routeModel.NetID, c.Request.Context())
+	if databaseError(c, err, RouteNotExists) {
+		return
+	}
 
 	user := c.MustGet("user").(*model.User)
 	if user.ID != netModel.UserID {
@@ -118,7 +136,9 @@ func RouteDelete(c *gin.Context) {
 		return
 	}
 
-	routeModel.Delete()
+	if databaseError(c, routeModel.Delete(c.Request.Context()), RouteNotExists) {
+		return
+	}
 	candy.ReloadNet(netModel.ID)
 	setResponseData(c, nil)
 }

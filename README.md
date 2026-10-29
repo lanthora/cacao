@@ -46,3 +46,12 @@ Location lookup priority remains IPDB, then MMDB, then ipinfo. IPDB files must
 support the CN language and contain `country_code` plus `region_name` or
 `city_name`. MMDB files must support GeoIP2 City lookups. Updates affect subsequent
 lookups; existing device locations are refreshed by normal device activity.
+
+## Database reliability
+
+Database operations use bounded SQLite transactions, checked errors and explicit
+field updates. Existing database files keep their original schema: no migration,
+new columns/indexes/tables or automatic duplicate cleanup is performed. Uniqueness
+checks run inside write transactions; device-session protection stays in memory.
+Run one Cacao process per storage directory. See [database operations](docs/database.md)
+for consistency guarantees, compatibility and verification.

@@ -1,19 +1,21 @@
 package model
 
-import (
-	"testing"
-)
+import "testing"
 
 func TestSetGetString(t *testing.T) {
-	if got := GetConfig("key", "default"); got != "default" {
-		t.Fatalf(`GetString("key") = %v, want %v`, got, "default")
+	if got, err := GetConfig("key", "default"); err != nil || got != "default" {
+		t.Fatalf("default: %q %v", got, err)
 	}
-	SetConfig("key", "value")
-	if got := GetConfig("key", "default"); got != "value" {
-		t.Fatalf(`GetString("key") = %v, want %v`, got, "value")
+	if err := SetConfig("key", "value"); err != nil {
+		t.Fatal(err)
 	}
-	DelConfig("key")
-	if got := GetConfig("key", "default"); got != "default" {
-		t.Fatalf(`GetString("key") = %v, want %v`, got, "default")
+	if got, err := GetConfig("key", "default"); err != nil || got != "value" {
+		t.Fatalf("saved: %q %v", got, err)
+	}
+	if err := DelConfig("key"); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := GetConfig("key", "default"); err != nil || got != "default" {
+		t.Fatalf("deleted: %q %v", got, err)
 	}
 }

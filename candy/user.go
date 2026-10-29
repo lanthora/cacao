@@ -1,36 +1,44 @@
 package candy
 
 import (
+	"context"
+	"fmt"
 	"strconv"
 	"time"
 
 	"github.com/lanthora/cacao/model"
 )
 
-func init() {
-	go autoCleanInactiveUser()
-}
-
-func CleanInactiveUser() {
-	threshold := func() int {
-		str := model.GetConfig("inactiveUserThreshold", "7")
-		if val, err := strconv.Atoi(str); err == nil && val > 0 {
-			return val
-		}
-		return 7
-	}()
-
-	users := model.GetUsers()
+func CleanInactiveUser(contexts ...context.Context) error {
+	ctx := context.Background()
+	if len(contexts) > 0 {
+		ctx = contexts[0]
+	}
+	ConfigMu.Lock()
+	defer ConfigMu.Unlock()
+	value, err := model.GetConfig("inactiveUserThreshold", "7", ctx)
+	if err != nil {
+		return err
+	}
+	days, err := strconv.Atoi(value)
+	if err != nil || days <= 0 {
+		return fmt.Errorf("invalid inactive user threshold %q", value)
+	}
+	users, err := model.GetUsers(ctx)
+	if err != nil {
+		return err
+	}
+	cutoff := time.Now().AddDate(0, 0, -days)
 	for _, u := range users {
-		if u.Role == "normal" && model.GetLastActiveTimeByUserID(u.ID).AddDate(0, 0, threshold).Before(time.Now()) {
-			u.Delete()
+		if u.Role == "normal" && u.UpdatedAt.Before(cutoff) {
+			ids, err := model.DeleteUserTree(u.ID, &cutoff, ctx)
+			if err != nil {
+				return err
+			}
+			for _, id := range ids {
+				DeleteNet(id)
+			}
 		}
 	}
-}
-
-func autoCleanInactiveUser() {
-	if model.GetConfig("autoCleanUser", "false") == "true" {
-		CleanInactiveUser()
-	}
-	time.AfterFunc(time.Hour, autoCleanInactiveUser)
+	return nil
 }

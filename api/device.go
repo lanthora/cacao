@@ -9,7 +9,10 @@ import (
 
 func DeviceShow(c *gin.Context) {
 	user := c.MustGet("user").(*model.User)
-	devices := model.GetDevicesByUserID(user.ID)
+	devices, err := model.GetDevicesByUserID(user.ID, c.Request.Context())
+	if databaseError(c, err, Unexpected) {
+		return
+	}
 
 	type devinfo struct {
 		DevID          uint   `json:"devid"`
@@ -59,13 +62,19 @@ func DeviceDelete(c *gin.Context) {
 		return
 	}
 
-	deviceModel := model.GetDeviceByDevID(request.DevID)
+	deviceModel, err := model.GetDeviceByDevID(request.DevID, c.Request.Context())
+	if databaseError(c, err, DeviceNotExists) {
+		return
+	}
 	if deviceModel.Online {
 		setErrorCode(c, CannotDeleteOnlineDevice)
 		return
 	}
 
-	netModel := model.GetNetByNetID(deviceModel.NetID)
+	netModel, err := model.GetNetByNetID(deviceModel.NetID, c.Request.Context())
+	if databaseError(c, err, DeviceNotExists) {
+		return
+	}
 
 	user := c.MustGet("user").(*model.User)
 	if user.ID != netModel.UserID {
@@ -73,6 +82,8 @@ func DeviceDelete(c *gin.Context) {
 		return
 	}
 
-	deviceModel.Delete()
+	if databaseError(c, deviceModel.Delete(c.Request.Context()), CannotDeleteOnlineDevice) {
+		return
+	}
 	setResponseData(c, nil)
 }

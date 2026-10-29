@@ -1,18 +1,10 @@
 package model
 
 import (
-	"github.com/lanthora/cacao/logger"
-	"github.com/lanthora/cacao/storage"
+	"context"
+
 	"gorm.io/gorm"
 )
-
-func init() {
-	db := storage.Get()
-	err := db.AutoMigrate(Route{})
-	if err != nil {
-		logger.Fatal("auto migrate routes failed: %v", err)
-	}
-}
 
 type Route struct {
 	gorm.Model
@@ -25,28 +17,41 @@ type Route struct {
 	Priority int
 }
 
-func (r *Route) Create() {
-	db := storage.Get()
-	db.Create(r)
-}
-
-func (r *Route) Delete() {
-	db := storage.Get()
-	db.Delete(r)
-}
-
-func GetRouteByRouteID(routeid uint) (route Route) {
-	if routeid != 0 {
-		db := storage.Get()
-		db.Where(&Route{Model: gorm.Model{ID: routeid}}).Take(&route)
+func (r *Route) Create(contexts ...context.Context) error {
+	original := *r
+	var saved Route
+	err := writeDB(contexts, func(tx *gorm.DB) error {
+		saved = original
+		var parent Net
+		if err := tx.First(&parent, original.NetID).Error; err != nil {
+			return err
+		}
+		return tx.Create(&saved).Error
+	})
+	if err == nil {
+		*r = saved
 	}
-	return
+	return err
 }
-
-func GetRoutesByUserID(userid uint) (routes []Route) {
-	if userid != 0 {
-		db := storage.Get()
-		db.Model(&Route{}).Joins("left join nets on routes.net_id = nets.id").Where("nets.user_id = ?", userid).Order("routes.net_id,routes.priority").Find(&routes)
+func (r *Route) Delete(contexts ...context.Context) error {
+	original := *r
+	var saved Route
+	err := writeDB(contexts, func(tx *gorm.DB) error { saved = original; return changed(tx.Delete(&saved)) })
+	if err == nil {
+		*r = saved
 	}
-	return
+	return err
+}
+func GetRouteByRouteID(id uint, contexts ...context.Context) (Route, error) {
+	var row Route
+	if id == 0 {
+		return row, gorm.ErrRecordNotFound
+	}
+	err := readDB(contexts).First(&row, id).Error
+	return row, err
+}
+func GetRoutesByUserID(id uint, contexts ...context.Context) ([]Route, error) {
+	var rows []Route
+	err := readDB(contexts).Joins("JOIN nets ON nets.id = routes.net_id AND nets.deleted_at IS NULL").Where("nets.user_id = ?", id).Order("routes.net_id,routes.priority").Find(&rows).Error
+	return rows, err
 }

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -9,7 +10,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/lanthora/cacao/candy"
 	"github.com/lanthora/cacao/model"
-	"github.com/lanthora/cacao/storage"
 )
 
 func AdminMiddleware() gin.HandlerFunc {
@@ -39,7 +39,10 @@ func AdminMiddleware() gin.HandlerFunc {
 }
 
 func AdminShowUsers(c *gin.Context) {
-	users := model.GetUsers()
+	users, err := model.GetUsers(c.Request.Context())
+	if databaseError(c, err, Unexpected) {
+		return
+	}
 
 	type userinfo struct {
 		UserID         uint   `json:"userid"`
@@ -55,16 +58,20 @@ func AdminShowUsers(c *gin.Context) {
 
 	response := make([]userinfo, 0)
 	for _, u := range users {
+		stats, err := model.GetUserStats(u.ID, c.Request.Context())
+		if databaseError(c, err, Unexpected) {
+			return
+		}
 		response = append(response, userinfo{
 			UserID:         u.ID,
 			Username:       u.Name,
 			Role:           u.Role,
 			RegTime:        u.CreatedAt.Format(time.DateTime),
-			LastActiveTime: model.GetLastActiveTimeByUserID(u.ID).Format(time.DateTime),
-			NetNum:         uint(len(model.GetNetsByUserID(u.ID))),
-			DevNum:         uint(len(model.GetDevicesByUserID(u.ID))),
-			RxSum:          model.GetRxSumByUserID(u.ID),
-			TxSum:          model.GetTxSumByUserID(u.ID),
+			LastActiveTime: u.UpdatedAt.Format(time.DateTime),
+			NetNum:         uint(stats.NetNum),
+			DevNum:         uint(stats.DevNum),
+			RxSum:          stats.RX,
+			TxSum:          stats.TX,
 		})
 	}
 
@@ -91,42 +98,14 @@ func AdminAddUser(c *gin.Context) {
 		return
 	}
 
-	db := storage.Get()
-	if func() bool {
-		count := int64(0)
-		db.Model(&model.User{}).Where(&model.User{Name: request.Username}).Count(&count)
-		return count > 0
-	}() {
-		setErrorCode(c, UsernameAlreadyTaken)
+	candy.ConfigMu.Lock()
+	defer candy.ConfigMu.Unlock()
+	user, network, err := model.RegisterUser(model.User{Name: request.Username, Password: hashUserPassword(request.Username, request.Password), Token: uuid.NewString()}, model.Net{Name: "@", Password: randomString(8), DHCP: "192.168.202.0/24", Broadcast: true}, true, c.Request.Context())
+	if databaseError(c, err, Unexpected) {
 		return
 	}
-
-	user := model.User{
-		Name:     request.Username,
-		Password: hashUserPassword(request.Username, request.Password),
-		Token:    uuid.NewString(),
-		Role:     "normal",
-	}
-
-	if result := db.Create(&user); result.Error != nil {
-		setUnexpectedMessage(c, result.Error.Error())
-		return
-	}
-
-	setResponseData(c, gin.H{
-		"name": user.Name,
-		"role": user.Role,
-	})
-
-	netModel := &model.Net{
-		UserID:    user.ID,
-		Name:      "@",
-		Password:  randomString(8),
-		DHCP:      "192.168.202.0/24",
-		Broadcast: true,
-	}
-	netModel.Create()
-	candy.InsertNet(netModel)
+	candy.InsertNet(network)
+	setResponseData(c, gin.H{"name": user.Name, "role": user.Role})
 }
 
 func AdminDeleteUser(c *gin.Context) {
@@ -145,13 +124,15 @@ func AdminDeleteUser(c *gin.Context) {
 		return
 	}
 
-	nets := model.GetNetsByUserID(request.UserID)
-	for _, n := range nets {
-		candy.DeleteNet(n.ID)
-		model.DeleteDevicesByNetID(n.ID)
-		model.DeleteNetByNetID(n.ID)
+	candy.ConfigMu.Lock()
+	defer candy.ConfigMu.Unlock()
+	ids, err := model.DeleteUserTree(request.UserID, nil, c.Request.Context())
+	if databaseError(c, err, UserNotExists) {
+		return
 	}
-	model.DeleteUserByUserID(request.UserID)
+	for _, id := range ids {
+		candy.DeleteNet(id)
+	}
 	setResponseData(c, nil)
 }
 
@@ -173,19 +154,22 @@ func AdminUpdateUserPassword(c *gin.Context) {
 		return
 	}
 
-	user := model.User{Name: request.Username}
-	db := storage.Get()
-	if result := db.Model(&model.User{}).Where(user).Take(&user); result.Error != nil {
-		setErrorCode(c, Unexpected)
+	user, err := model.FindUser(request.Username, c.Request.Context())
+	if databaseError(c, err, UserNotExists) {
 		return
 	}
-	user.Password = hashUserPassword(user.Name, request.Password)
-	user.Save()
+	if databaseError(c, user.UpdateCredentials(hashUserPassword(user.Name, request.Password), uuid.NewString(), user.IP, c.Request.Context()), Unexpected) {
+		return
+	}
 	setResponseData(c, nil)
 }
 
 func AdminGetOpenRegisterConfig(c *gin.Context) {
-	openreg := model.GetConfig("openreg", "true") == "true"
+	value, ok := config(c, "openreg", "true")
+	if !ok {
+		return
+	}
+	openreg := value == "true"
 	setResponseData(c, gin.H{
 		"openreg": openreg,
 	})
@@ -199,19 +183,18 @@ func AdminSetOpenRegisterConfig(c *gin.Context) {
 		setErrorCode(c, InvalidRequest)
 		return
 	}
-	if request.OpenReg {
-		model.SetConfig("openreg", "true")
-	} else {
-		model.SetConfig("openreg", "false")
-	}
-	setResponseData(c, nil)
+	saveConfig(c, "openreg", strconv.FormatBool(request.OpenReg))
 }
 
 func AdminGetRegisterIntervalConfig(c *gin.Context) {
-	intervalStr := model.GetConfig("reginterval", "1440")
+	intervalStr, ok := config(c, "reginterval", "1440")
+	if !ok {
+		return
+	}
 	interval, err := strconv.Atoi(intervalStr)
-	if err != nil {
-		interval = 1440
+	if err != nil || interval < 0 {
+		databaseError(c, fmt.Errorf("invalid persisted registration interval %q", intervalStr), Unexpected)
+		return
 	}
 	setResponseData(c, gin.H{
 		"reginterval": interval,
@@ -227,12 +210,15 @@ func AdminSetRegisterIntervalConfig(c *gin.Context) {
 		return
 	}
 
-	model.SetConfig("reginterval", strconv.FormatUint(uint64(request.RegInterval), 10))
-	setResponseData(c, nil)
+	saveConfig(c, "reginterval", strconv.FormatUint(uint64(request.RegInterval), 10))
 }
 
 func AdminGetAutoCleanUserConfig(c *gin.Context) {
-	autoCleanUser := model.GetConfig("autoCleanUser", "false") == "true"
+	value, ok := config(c, "autoCleanUser", "false")
+	if !ok {
+		return
+	}
+	autoCleanUser := value == "true"
 	setResponseData(c, gin.H{
 		"autoCleanUser": autoCleanUser,
 	})
@@ -246,19 +232,18 @@ func AdminSetAutoCleanUserConfig(c *gin.Context) {
 		setErrorCode(c, InvalidRequest)
 		return
 	}
-	if request.AutoCleanInactiveUser {
-		model.SetConfig("autoCleanUser", "true")
-	} else {
-		model.SetConfig("autoCleanUser", "false")
-	}
-	setResponseData(c, nil)
+	saveConfig(c, "autoCleanUser", strconv.FormatBool(request.AutoCleanInactiveUser))
 }
 
 func AdminGetInactiveUserThresholdConfig(c *gin.Context) {
-	thresholdStr := model.GetConfig("inactiveUserThreshold", "7")
+	thresholdStr, ok := config(c, "inactiveUserThreshold", "7")
+	if !ok {
+		return
+	}
 	threshold, err := strconv.Atoi(thresholdStr)
-	if err != nil {
-		threshold = 7
+	if err != nil || threshold <= 0 {
+		databaseError(c, fmt.Errorf("invalid persisted inactive user threshold %q", thresholdStr), Unexpected)
+		return
 	}
 	setResponseData(c, gin.H{
 		"inactiveUserThreshold": threshold,
@@ -278,11 +263,11 @@ func AdminSetInactiveUserThresholdConfig(c *gin.Context) {
 		return
 	}
 
-	model.SetConfig("inactiveUserThreshold", strconv.FormatUint(uint64(request.InactiveUserThreshold), 10))
-	setResponseData(c, nil)
+	saveConfig(c, "inactiveUserThreshold", strconv.FormatUint(uint64(request.InactiveUserThreshold), 10))
 }
 
 func AdminCleanInactiveUser(c *gin.Context) {
-	candy.CleanInactiveUser()
-	setResponseData(c, nil)
+	if !databaseError(c, candy.CleanInactiveUser(c.Request.Context()), Unexpected) {
+		setResponseData(c, nil)
+	}
 }

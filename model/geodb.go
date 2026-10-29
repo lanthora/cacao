@@ -1,10 +1,10 @@
 package model
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/lanthora/cacao/storage"
@@ -12,9 +12,6 @@ import (
 )
 
 const MaxGeoDBIntervalHours = 87600
-
-// Serialize read-then-write transactions for SQLite and prevent duplicate keys.
-var geoDBConfigWriteMu sync.Mutex
 
 type GeoDBConfig struct {
 	Type                string `json:"type"`
@@ -42,15 +39,23 @@ func (c GeoDBConfig) Validate() error {
 }
 
 func GetGeoDBConfig(kind string) (GeoDBConfig, error) {
+	return GetGeoDBConfigContext(context.Background(), kind)
+}
+func GetGeoDBConfigContext(ctx context.Context, kind string) (GeoDBConfig, error) {
 	c := GeoDBConfig{Type: kind, UpdateIntervalHours: 24}
 	if !ValidGeoDBType(kind) {
 		return c, fmt.Errorf("unsupported database type")
 	}
 	var rows []Config
-	if err := storage.Get().Where("key IN ?", []string{kind + "DownloadURL", kind + "UpdateIntervalHours", kind + "LastSuccessAt"}).Find(&rows).Error; err != nil {
+	if err := storage.Get().WithContext(ctx).Where("key IN ?", []string{kind + "DownloadURL", kind + "UpdateIntervalHours", kind + "LastSuccessAt"}).Find(&rows).Error; err != nil {
 		return c, err
 	}
+	seen := map[string]bool{}
 	for _, row := range rows {
+		if seen[row.Key] {
+			return c, fmt.Errorf("%w: configuration key %q", ErrAmbiguousData, row.Key)
+		}
+		seen[row.Key] = true
 		switch row.Key {
 		case kind + "DownloadURL":
 			c.DownloadURL = row.Value
@@ -68,37 +73,26 @@ func GetGeoDBConfig(kind string) (GeoDBConfig, error) {
 	return c, c.Validate()
 }
 
-func setGeoDBValue(tx *gorm.DB, key, value string) error {
-	var row Config
-	result := tx.Where("key = ?", key).First(&row)
-	if result.Error != nil && result.Error != gorm.ErrRecordNotFound {
-		return result.Error
-	}
-	row.Key, row.Value = key, value
-	return tx.Save(&row).Error
-}
-
-func SaveGeoDBConfig(c GeoDBConfig) error {
-	geoDBConfigWriteMu.Lock()
-	defer geoDBConfigWriteMu.Unlock()
+func SaveGeoDBConfig(c GeoDBConfig, contexts ...context.Context) error {
 	if err := c.Validate(); err != nil {
 		return err
 	}
-	return storage.Get().Transaction(func(tx *gorm.DB) error {
-		if err := setGeoDBValue(tx, c.Type+"DownloadURL", c.DownloadURL); err != nil {
+	return storage.Transaction(requestContext(contexts), func(tx *gorm.DB) error {
+		if err := setConfigValue(tx, c.Type+"DownloadURL", c.DownloadURL); err != nil {
 			return err
 		}
-		return setGeoDBValue(tx, c.Type+"UpdateIntervalHours", fmt.Sprint(c.UpdateIntervalHours))
+		return setConfigValue(tx, c.Type+"UpdateIntervalHours", fmt.Sprint(c.UpdateIntervalHours))
 	})
 }
 
 func SaveGeoDBSuccess(kind string, at time.Time) error {
-	geoDBConfigWriteMu.Lock()
-	defer geoDBConfigWriteMu.Unlock()
+	return SaveGeoDBSuccessContext(context.Background(), kind, at)
+}
+func SaveGeoDBSuccessContext(ctx context.Context, kind string, at time.Time) error {
 	if !ValidGeoDBType(kind) {
 		return fmt.Errorf("unsupported database type")
 	}
-	return storage.Get().Transaction(func(tx *gorm.DB) error {
-		return setGeoDBValue(tx, kind+"LastSuccessAt", at.UTC().Format(time.RFC3339Nano))
+	return storage.Transaction(ctx, func(tx *gorm.DB) error {
+		return setConfigValue(tx, kind+"LastSuccessAt", at.UTC().Format(time.RFC3339Nano))
 	})
 }

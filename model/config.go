@@ -1,18 +1,11 @@
 package model
 
 import (
-	"github.com/lanthora/cacao/logger"
-	"github.com/lanthora/cacao/storage"
+	"context"
+	"fmt"
+
 	"gorm.io/gorm"
 )
-
-func init() {
-	db := storage.Get()
-
-	if err := db.AutoMigrate(Config{}); err != nil {
-		logger.Fatal("auto migrate configs failed: %v", err)
-	}
-}
 
 type Config struct {
 	gorm.Model
@@ -20,30 +13,40 @@ type Config struct {
 	Value string
 }
 
-func (c *Config) Save() {
-	db := storage.Get()
-	db.Save(c)
-}
-
-func SetConfig(key string, value string) {
-	db := storage.Get()
-	config := &Config{Key: key}
-	db.Where(config).Take(config)
-	config.Value = value
-	config.Save()
-}
-
-func GetConfig(key string, defaultValue string) string {
-	db := storage.Get()
-	config := &Config{Key: key}
-	if result := db.Where(config).Take(config); result.Error == nil {
-		return config.Value
+// All callers of setConfigValue are already inside an IMMEDIATE transaction.
+// The lookup and write therefore remain serialized without a new unique index.
+func configValue(db *gorm.DB, key, fallback string) (string, error) {
+	var rows []Config
+	if err := db.Where("key = ?", key).Limit(2).Find(&rows).Error; err != nil {
+		return "", err
 	}
-	return defaultValue
+	if len(rows) == 0 {
+		return fallback, nil
+	}
+	if len(rows) > 1 {
+		return "", fmt.Errorf("%w: configuration key %q", ErrAmbiguousData, key)
+	}
+	return rows[0].Value, nil
 }
-
-func DelConfig(key string) {
-	db := storage.Get()
-	config := &Config{Key: key}
-	db.Where(config).Delete(config)
+func setConfigValue(tx *gorm.DB, key, value string) error {
+	var rows []Config
+	if err := tx.Where("key = ?", key).Limit(2).Find(&rows).Error; err != nil {
+		return err
+	}
+	if len(rows) > 1 {
+		return fmt.Errorf("%w: configuration key %q", ErrAmbiguousData, key)
+	}
+	if len(rows) == 0 {
+		return tx.Create(&Config{Key: key, Value: value}).Error
+	}
+	return changed(tx.Model(&Config{}).Where("id = ?", rows[0].ID).Update("value", value))
+}
+func GetConfig(key, fallback string, contexts ...context.Context) (string, error) {
+	return configValue(readDB(contexts), key, fallback)
+}
+func SetConfig(key, value string, contexts ...context.Context) error {
+	return writeDB(contexts, func(tx *gorm.DB) error { return setConfigValue(tx, key, value) })
+}
+func DelConfig(key string, contexts ...context.Context) error {
+	return writeDB(contexts, func(tx *gorm.DB) error { return tx.Where("key = ?", key).Delete(&Config{}).Error })
 }

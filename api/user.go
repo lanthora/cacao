@@ -12,7 +12,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/lanthora/cacao/candy"
 	"github.com/lanthora/cacao/model"
-	"github.com/lanthora/cacao/storage"
 )
 
 func LoginMiddleware() gin.HandlerFunc {
@@ -42,9 +41,13 @@ func LoginMiddleware() gin.HandlerFunc {
 		user := &model.User{}
 		user.ID = uint(id)
 
-		db := storage.Get()
-		result := db.Where(user).Take(user)
-		if result.Error != nil || user.Token != token {
+		found, err := model.Authenticate(user.ID, token, c.Request.Context())
+		if databaseError(c, err, NotLoggedIn) {
+			c.Abort()
+			return
+		}
+		*user = found
+		if user.Token != token {
 			setErrorCode(c, NotLoggedIn)
 			c.Abort()
 			return
@@ -65,19 +68,14 @@ func UserInfo(c *gin.Context) {
 
 func UserStatistics(c *gin.Context) {
 	user := c.MustGet("user").(*model.User)
-	setResponseData(c, gin.H{
-		"netnum": uint(len(model.GetNetsByUserID(user.ID))),
-		"devnum": uint(len(model.GetDevicesByUserID(user.ID))),
-		"rxsum":  model.GetRxSumByUserID(user.ID),
-		"txsum":  model.GetTxSumByUserID(user.ID),
-	})
+	stats, err := model.GetUserStats(user.ID, c.Request.Context())
+	if databaseError(c, err, Unexpected) {
+		return
+	}
+	setResponseData(c, gin.H{"netnum": stats.NetNum, "devnum": stats.DevNum, "rxsum": stats.RX, "txsum": stats.TX})
 }
 
 func UserRegister(c *gin.Context) {
-	if model.GetConfig("openreg", "true") != "true" {
-		setErrorCode(c, RegistrationDisabled)
-		return
-	}
 
 	var request struct {
 		Username string `json:"username"`
@@ -100,70 +98,20 @@ func UserRegister(c *gin.Context) {
 		return
 	}
 
-	db := storage.Get()
-	if func() bool {
-		count := int64(0)
-		db.Model(&model.User{}).Where(&model.User{IP: c.ClientIP(), Role: "normal"}).Where("created_at > ?", time.Now().Add(-1*registerInterval())).Count(&count)
-		return count > 0
-	}() {
-		setErrorCode(c, RegisterTooOften)
+	candy.ConfigMu.Lock()
+	defer candy.ConfigMu.Unlock()
+	user, network, err := model.RegisterUser(model.User{
+		Name: request.Username, Password: hashUserPassword(request.Username, request.Password), Token: uuid.NewString(), IP: c.ClientIP(),
+	}, model.Net{Name: "@", Password: randomString(8), DHCP: "192.168.202.0/24", Broadcast: true}, false, c.Request.Context())
+	if databaseError(c, err, Unexpected) {
 		return
 	}
-
-	if func() bool {
-		count := int64(0)
-		db.Model(&model.User{}).Where(&model.User{Name: request.Username}).Count(&count)
-		return count > 0
-	}() {
-		setErrorCode(c, UsernameAlreadyTaken)
-		return
+	if network != nil {
+		candy.InsertNet(network)
 	}
-
-	role := func() string {
-		count := int64(0)
-		db.Model(&model.User{}).Count(&count)
-		if count == 0 {
-			return "admin"
-		}
-		return "normal"
-	}()
-
-	user := model.User{
-		Name:     request.Username,
-		Password: hashUserPassword(request.Username, request.Password),
-		Token:    uuid.NewString(),
-		Role:     role,
-		IP:       c.ClientIP(),
-	}
-
-	if result := db.Create(&user); result.Error != nil {
-		setUnexpectedMessage(c, result.Error.Error())
-		return
-	}
-
 	c.SetCookie("id", strconv.FormatUint(uint64(user.ID), 10), 86400, "/", "", false, true)
 	c.SetCookie("token", user.Token, 86400, "/", "", false, true)
-
-	setResponseData(c, gin.H{
-		"name": user.Name,
-		"role": user.Role,
-	})
-
-	if role == "admin" {
-		model.SetConfig("openreg", "false")
-	}
-
-	if role == "normal" {
-		netModel := &model.Net{
-			UserID:    user.ID,
-			Name:      "@",
-			Password:  randomString(8),
-			DHCP:      "192.168.202.0/24",
-			Broadcast: true,
-		}
-		netModel.Create()
-		candy.InsertNet(netModel)
-	}
+	setResponseData(c, gin.H{"name": user.Name, "role": user.Role})
 }
 
 func UserLogin(c *gin.Context) {
@@ -176,24 +124,21 @@ func UserLogin(c *gin.Context) {
 		return
 	}
 
-	user := model.User{
-		Name:     request.Username,
-		Password: hashUserPassword(request.Username, request.Password),
+	user, err := model.FindUser(request.Username, c.Request.Context())
+	if databaseError(c, err, IncorrectUsernameOrPassword) {
+		return
 	}
-
-	db := storage.Get()
-
-	if result := db.Where(user).Take(&user); result.Error != nil {
+	if user.Password != hashUserPassword(request.Username, request.Password) {
 		setErrorCode(c, IncorrectUsernameOrPassword)
 		return
 	}
-
-	if len(user.IP) == 0 {
-		user.IP = c.ClientIP()
+	ip := user.IP
+	if ip == "" {
+		ip = c.ClientIP()
 	}
-
-	user.Token = uuid.NewString()
-	user.Save()
+	if databaseError(c, user.UpdateCredentials(user.Password, uuid.NewString(), ip, c.Request.Context()), Unexpected) {
+		return
+	}
 
 	c.SetCookie("id", strconv.FormatUint(uint64(user.ID), 10), 86400, "/", "", false, true)
 	c.SetCookie("token", user.Token, 86400, "/", "", false, true)
@@ -206,8 +151,9 @@ func UserLogin(c *gin.Context) {
 
 func UserLogout(c *gin.Context) {
 	user := c.MustGet("user").(*model.User)
-	user.Token = uuid.NewString()
-	user.Save()
+	if databaseError(c, user.UpdateCredentials(user.Password, uuid.NewString(), user.IP, c.Request.Context()), Unexpected) {
+		return
+	}
 
 	c.SetCookie("id", "", -1, "/", "", false, true)
 	c.SetCookie("token", "", -1, "/", "", false, true)
@@ -237,23 +183,14 @@ func ChangePassword(c *gin.Context) {
 		return
 	}
 
-	user.Password = hashUserPassword(user.Name, request.NewPassword)
-	user.Token = uuid.NewString()
-	user.Save()
+	if databaseError(c, user.UpdateCredentials(hashUserPassword(user.Name, request.NewPassword), uuid.NewString(), user.IP, c.Request.Context()), Unexpected) {
+		return
+	}
 
 	c.SetCookie("id", strconv.FormatUint(uint64(user.ID), 10), 86400, "/", "", false, true)
 	c.SetCookie("token", user.Token, 86400, "/", "", false, true)
 
 	setResponseData(c, nil)
-}
-
-func registerInterval() time.Duration {
-	intervalStr := model.GetConfig("reginterval", "1440")
-	interval, err := strconv.Atoi(intervalStr)
-	if err != nil {
-		interval = 1440
-	}
-	return time.Duration(interval) * time.Minute
 }
 
 func hashUserPassword(username, password string) string {

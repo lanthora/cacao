@@ -18,6 +18,7 @@ import (
 
 	"github.com/ipipdotnet/ipdb-go"
 	"github.com/lanthora/cacao/model"
+	"github.com/lanthora/cacao/storage"
 	"github.com/oschwald/geoip2-golang"
 )
 
@@ -64,12 +65,12 @@ func testUpdater(t *testing.T, url string) (*GeoDBUpdater, *memoryGeoConfig) {
 	for _, kind := range []string{"ipdb", "mmdb"} {
 		store.values[kind] = model.GeoDBConfig{Type: kind, DownloadURL: url, UpdateIntervalHours: 24}
 	}
-	u.getConfig = func(kind string) (model.GeoDBConfig, error) {
+	u.getConfig = func(_ context.Context, kind string) (model.GeoDBConfig, error) {
 		store.mu.Lock()
 		defer store.mu.Unlock()
 		return store.values[kind], nil
 	}
-	u.saveSuccess = func(kind string, at time.Time) error {
+	u.saveSuccess = func(_ context.Context, kind string, at time.Time) error {
 		store.mu.Lock()
 		defer store.mu.Unlock()
 		if store.fail {
@@ -140,7 +141,7 @@ func TestGeoDBPublishAndFailure(t *testing.T) {
 				t.Fatal("legacy file removed", err)
 			}
 			current := u.states[kind].current
-			config, _ := u.getConfig(kind)
+			config, _ := u.getConfig(context.Background(), kind)
 			tests := map[string]func(http.ResponseWriter, *http.Request){
 				"404":       func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(404) },
 				"html":      func(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, "<html>error</html>") },
@@ -162,7 +163,7 @@ func TestGeoDBPublishAndFailure(t *testing.T) {
 					if u.states[kind].current != current {
 						t.Fatal("current version changed")
 					}
-					c, _ := u.getConfig(kind)
+					c, _ := u.getConfig(context.Background(), kind)
 					if c.LastSuccessAt != config.LastSuccessAt {
 						t.Fatal("success timestamp changed")
 					}
@@ -220,7 +221,7 @@ func TestGeoDBRecovery(t *testing.T) {
 			if restarted.states[kind].current != current {
 				t.Fatal("recovery selected wrong file")
 			}
-			c, _ := restarted.getConfig(kind)
+			c, _ := restarted.getConfig(context.Background(), kind)
 			if c.LastSuccessAt == "" {
 				t.Fatal("timestamp was not recovered")
 			}
@@ -399,5 +400,47 @@ func TestGeoDBRejectMalformedIPDB(t *testing.T) {
 				t.Fatal("accepted malformed database")
 			}
 		})
+	}
+}
+
+func TestGeoDBSQLitePersistenceRecovery(t *testing.T) {
+	body := testBody(t, "ipdb")
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write(body) }))
+	defer server.Close()
+	if err := model.SaveGeoDBConfig(model.GeoDBConfig{Type: "ipdb", DownloadURL: server.URL, UpdateIntervalHours: 24}); err != nil {
+		t.Fatal(err)
+	}
+	db := storage.Get()
+	if err := db.Exec("CREATE TRIGGER reject_geodb_time BEFORE INSERT ON configs WHEN NEW.key = 'ipdbLastSuccessAt' BEGIN SELECT RAISE(ABORT, 'injected timestamp failure'); END").Error; err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		db.Exec("DROP TRIGGER IF EXISTS reject_geodb_time")
+		for _, key := range []string{"ipdbDownloadURL", "ipdbUpdateIntervalHours", "ipdbLastSuccessAt"} {
+			if err := model.DelConfig(key); err != nil {
+				t.Error(err)
+			}
+		}
+	})
+	updater := NewGeoDBUpdater(t.TempDir())
+	if err := updater.Update(context.Background(), "ipdb"); err == nil || !strings.Contains(err.Error(), "published") {
+		t.Fatalf("expected partial success: %v", err)
+	}
+	assertGeoQuery(t, updater, "ipdb")
+	config, err := model.GetGeoDBConfig("ipdb")
+	if err != nil || config.LastSuccessAt != "" {
+		t.Fatalf("failed timestamp persisted: %+v %v", config, err)
+	}
+	if err := db.Exec("DROP TRIGGER reject_geodb_time").Error; err != nil {
+		t.Fatal(err)
+	}
+	restarted := NewGeoDBUpdater(updater.root)
+	if err := restarted.recoverType("ipdb"); err != nil {
+		t.Fatal(err)
+	}
+	assertGeoQuery(t, restarted, "ipdb")
+	config, err = model.GetGeoDBConfig("ipdb")
+	if err != nil || config.LastSuccessAt == "" {
+		t.Fatalf("timestamp not recovered: %+v %v", config, err)
 	}
 }

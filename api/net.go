@@ -4,13 +4,14 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/lanthora/cacao/candy"
 	"github.com/lanthora/cacao/model"
-	"github.com/lanthora/cacao/storage"
-	"gorm.io/gorm"
 )
 
 func NetShow(c *gin.Context) {
 	user := c.MustGet("user").(*model.User)
-	nets := model.GetNetsByUserID(user.ID)
+	nets, err := model.GetNetsByUserID(user.ID, c.Request.Context())
+	if databaseError(c, err, Unexpected) {
+		return
+	}
 
 	type netinfo struct {
 		NetID     uint   `json:"netid"`
@@ -39,6 +40,8 @@ func NetShow(c *gin.Context) {
 }
 
 func NetInsert(c *gin.Context) {
+	candy.ConfigMu.Lock()
+	defer candy.ConfigMu.Unlock()
 	var request struct {
 		Netname   string `json:"netname"`
 		Password  string `json:"password"`
@@ -74,17 +77,13 @@ func NetInsert(c *gin.Context) {
 		Name:   request.Netname,
 	}
 
-	db := storage.Get()
-	result := db.Where(netModel).Take(netModel)
-	if result.Error != gorm.ErrRecordNotFound {
-		setErrorCode(c, NetworkAlreadyExists)
-		return
-	}
-
 	netModel.Password = request.Password
 	netModel.DHCP = request.DHCP
 	netModel.Broadcast = request.Broadcast
-	netModel.Create()
+	netModel.Lease = request.Lease
+	if databaseError(c, netModel.Create(c.Request.Context()), NetworkNotExists) {
+		return
+	}
 	candy.InsertNet(netModel)
 
 	setResponseData(c, gin.H{
@@ -98,6 +97,8 @@ func NetInsert(c *gin.Context) {
 }
 
 func NetEdit(c *gin.Context) {
+	candy.ConfigMu.Lock()
+	defer candy.ConfigMu.Unlock()
 	var request struct {
 		NetID     uint   `json:"netid"`
 		Netname   string `json:"netname"`
@@ -129,7 +130,10 @@ func NetEdit(c *gin.Context) {
 		return
 	}
 
-	netModel := model.GetNetByNetID(request.NetID)
+	netModel, err := model.GetNetByNetID(request.NetID, c.Request.Context())
+	if databaseError(c, err, NetworkNotExists) {
+		return
+	}
 	if netModel.UserID != user.ID {
 		setErrorCode(c, NetworkNotExists)
 		return
@@ -140,7 +144,9 @@ func NetEdit(c *gin.Context) {
 	netModel.DHCP = request.DHCP
 	netModel.Broadcast = request.Broadcast
 	netModel.Lease = request.Lease
-	netModel.Update()
+	if databaseError(c, netModel.Update(c.Request.Context()), NetworkNotExists) {
+		return
+	}
 	candy.UpdateNet(&netModel)
 
 	setResponseData(c, gin.H{
@@ -154,6 +160,8 @@ func NetEdit(c *gin.Context) {
 }
 
 func NetDelete(c *gin.Context) {
+	candy.ConfigMu.Lock()
+	defer candy.ConfigMu.Unlock()
 	var request struct {
 		ID uint `json:"netid"`
 	}
@@ -164,17 +172,18 @@ func NetDelete(c *gin.Context) {
 	}
 
 	user := c.MustGet("user").(*model.User)
-	netModel := &model.Net{}
-	netModel.ID = request.ID
-	db := storage.Get()
-	result := db.Where(netModel).Take(netModel)
-
-	if result.Error != nil || netModel.UserID != user.ID {
+	netModel, err := model.GetNetByNetID(request.ID, c.Request.Context())
+	if databaseError(c, err, NetworkNotExists) {
+		return
+	}
+	if netModel.UserID != user.ID {
 		setErrorCode(c, NetworkNotExists)
 		return
 	}
 
-	netModel.Delete()
+	if databaseError(c, netModel.Delete(c.Request.Context()), NetworkNotExists) {
+		return
+	}
 	candy.DeleteNet(netModel.ID)
 
 	setResponseData(c, gin.H{

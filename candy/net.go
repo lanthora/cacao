@@ -1,34 +1,27 @@
 package candy
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"math/rand/v2"
 	"net"
 	"strconv"
 	"strings"
 	"sync"
-	"time"
+	"sync/atomic"
 
-	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/lanthora/cacao/logger"
 	"github.com/lanthora/cacao/model"
 	"github.com/lanthora/cacao/storage"
 	"gorm.io/gorm"
 )
 
-func init() {
-	idNetMap = map[uint]*Net{}
-
-	for _, netModel := range model.GetNets() {
-		InsertNet(&netModel)
-	}
-
-	go autoFlush()
-}
-
 type Net struct {
+	stateMu      sync.RWMutex
+	closed       bool
 	model        *model.Net
 	ipWsMap      map[uint32]*candysocket
 	ipWsMapMutex sync.RWMutex
@@ -38,50 +31,61 @@ type Net struct {
 	mask uint32
 }
 
-var idNetMap map[uint]*Net
+var idNetMap = map[uint]*Net{}
+
+// ConfigMu orders database commits and their runtime effects. Never acquire it inside a database transaction.
+var ConfigMu sync.Mutex
 var idNetMapMutex sync.RWMutex
 
-func flush() {
+func flush(contexts ...context.Context) {
+	ctx := context.Background()
+	if len(contexts) > 0 {
+		ctx = contexts[0]
+	}
+	retryDisconnects(ctx)
 	idNetMapMutex.RLock()
-	defer idNetMapMutex.RUnlock()
-
-	refreshedUsers := mapset.NewSet[uint]()
-
+	nets := make([]*Net, 0, len(idNetMap))
 	for _, n := range idNetMap {
+		nets = append(nets, n)
+	}
+	idNetMapMutex.RUnlock()
+	var devices []model.Device
+	users := map[uint]bool{}
+	for _, n := range nets {
+		n.stateMu.RLock()
 		n.ipWsMapMutex.RLock()
-		defer n.ipWsMapMutex.RUnlock()
-		hasDeviceOnline := false
 		for _, ws := range n.ipWsMap {
 			if ws.dev.model.Online {
-				hasDeviceOnline = true
-				ws.dev.model.SaveRxTxOnline()
+				devices = append(devices, model.Device{Model: ws.dev.model.Model, NetID: ws.dev.model.NetID, VMac: ws.dev.model.VMac, SessionID: ws.dev.model.SessionID, RX: atomic.LoadUint64(&ws.dev.model.RX), TX: atomic.LoadUint64(&ws.dev.model.TX)})
+				users[n.model.UserID] = true
 			}
 		}
-		if hasDeviceOnline && !refreshedUsers.ContainsOne(n.model.UserID) {
-			model.RefreshUserLastActiveTimeByUserID(n.model.UserID)
-			refreshedUsers.Add(n.model.UserID)
+		n.ipWsMapMutex.RUnlock()
+		n.stateMu.RUnlock()
+	}
+	// No application lock is held while waiting for SQLite.
+	for _, d := range devices {
+		if err := d.SaveTraffic(ctx); err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			logger.Warn("flush device %d: %v", d.ID, err)
 		}
 	}
-	refreshedUsers.Clear()
+	for id := range users {
+		if err := model.RefreshUserLastActiveTimeByUserID(id, ctx); err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			logger.Warn("refresh user %d: %v", id, err)
+		}
+	}
 }
 
-func autoFlush() {
-	flush()
-	time.AfterFunc(time.Duration(1)*time.Minute, autoFlush)
-}
-
-func (n *Net) ipConflict(ip, vmac string) bool {
-	db := storage.Get()
-	device := &model.Device{NetID: n.model.ID, IP: ip}
-	result := db.Where(device).Take(device)
-	if result.Error == gorm.ErrRecordNotFound {
-		return false
+func (n *Net) ipConflict(ctx context.Context, ip, vmac string) (bool, error) {
+	var device model.Device
+	err := storage.Get().WithContext(ctx).Where("net_id = ? AND ip = ?", n.model.ID, ip).Take(&device).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return false, nil
 	}
-	if result.Error == nil && device.VMac == vmac {
-		return false
+	if err != nil {
+		return false, err
 	}
-
-	return true
+	return device.VMac != vmac, nil
 }
 
 func (n *Net) checkAuthMessage(message *AuthMessage) error {
@@ -136,7 +140,12 @@ func (n *Net) updateHost() string {
 	return uint32ToStrIp(n.net | n.host)
 }
 
-func (n *Net) close() {
+func (n *Net) close(retire bool) {
+	n.stateMu.Lock()
+	defer n.stateMu.Unlock()
+	if retire {
+		n.closed = true
+	}
 	n.ipWsMapMutex.Lock()
 	defer n.ipWsMapMutex.Unlock()
 	for ip, ws := range n.ipWsMap {
@@ -147,8 +156,8 @@ func (n *Net) close() {
 }
 
 func IsInvalidDHCP(cidr string) bool {
-	_, ipNet, err := net.ParseCIDR(cidr)
-	if err != nil {
+	ip, ipNet, err := net.ParseCIDR(cidr)
+	if err != nil || ip.To4() == nil || len(ipNet.Mask) != net.IPv4len {
 		return true
 	}
 	mask := binary.BigEndian.Uint32(ipNet.Mask)
@@ -190,7 +199,7 @@ func DeleteNet(netid uint) {
 	defer idNetMapMutex.Unlock()
 
 	if net, ok := idNetMap[netid]; ok {
-		net.close()
+		net.close(true)
 	}
 
 	delete(idNetMap, netid)
@@ -201,7 +210,7 @@ func ReloadNet(netid uint) {
 	defer idNetMapMutex.Unlock()
 
 	if net, ok := idNetMap[netid]; ok {
-		net.close()
+		net.close(false)
 	}
 }
 
@@ -215,7 +224,7 @@ func getNetById(netid uint) *Net {
 	return nil
 }
 
-func getNetByPath(path string) *Net {
+func getNetByPath(path string, contexts ...context.Context) *Net {
 	username := "@"
 	netname := "@"
 
@@ -229,7 +238,11 @@ func getNetByPath(path string) *Net {
 		}
 		netname = result[1]
 	}
-	netid := model.GetNetIdByUsernameAndNetname(username, netname)
+	netid, err := model.GetNetIdByUsernameAndNetname(username, netname, contexts...)
+	if err != nil {
+		logger.Warn("resolve network: %v", err)
+		return nil
+	}
 	return getNetById(netid)
 }
 

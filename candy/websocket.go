@@ -3,14 +3,17 @@ package candy
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/lanthora/cacao/logger"
 	"github.com/lanthora/cacao/model"
@@ -40,13 +43,21 @@ func handleWebsocket(c *gin.Context) {
 		return
 	}
 	defer conn.Close()
-	net := getNetByPath(c.Request.URL.Path)
+	net := getNetByPath(c.Request.URL.Path, c.Request.Context())
 	if net == nil {
 		logger.Debug("net not found: %v", c.Request.URL.Path)
 		return
 	}
 	ws := &candysocket{ctx: c, conn: conn, net: net}
-	conn.SetPingHandler(func(buffer string) error { return ws.handlePingMessage(buffer) })
+	defer ws.disconnect()
+	conn.SetPingHandler(func(buffer string) error {
+		net.stateMu.Lock()
+		defer net.stateMu.Unlock()
+		if net.closed {
+			return fmt.Errorf("network was removed or replaced")
+		}
+		return ws.handlePingMessage(buffer)
+	})
 
 	for {
 		ws.updateReadDeadline()
@@ -58,36 +69,70 @@ func handleWebsocket(c *gin.Context) {
 		if messageType != websocket.BinaryMessage {
 			continue
 		}
-		switch uint8(buffer[0]) {
-		case AUTH:
-			err = ws.handleAuthMessage(buffer)
-		case FORWARD:
-			err = ws.handleForwardMessage(buffer)
-		case DHCP:
-			err = ws.handleDHCPMessage(buffer)
-		case PEER:
-			err = ws.handlePeerConnMessage(buffer)
-		case VMAC:
-			err = ws.handleVMacMessage(buffer)
-		case DISCOVERY:
-			err = ws.handleDiscoveryMessage(buffer)
-		case GENERAL:
-			err = ws.handleGeneralMessage(buffer)
-		}
+		err = ws.handleMessage(buffer)
+
 		if err != nil {
 			logger.Debug("handle client message failed: %v", err)
 			break
 		}
 	}
 
+}
+
+func (ws *candysocket) disconnect() {
+	net := ws.net
+	net.stateMu.Lock()
+	var disconnected *model.Device
 	if ws.dev != nil && ws.dev.model.Online {
 		ws.dev.model.Online = false
-		ws.dev.model.SaveRxTxOnline()
-
+		snapshot := *ws.dev.model
+		disconnected = &snapshot
 		net.ipWsMapMutex.Lock()
-		defer net.ipWsMapMutex.Unlock()
-		delete(net.ipWsMap, ws.dev.ip)
+		if net.ipWsMap[ws.dev.ip] == ws {
+			delete(net.ipWsMap, ws.dev.ip)
+		}
+		net.ipWsMapMutex.Unlock()
 	}
+	net.stateMu.Unlock()
+	if disconnected != nil {
+		persistDisconnect(*disconnected)
+	}
+
+}
+
+// Always release state locks on every return, including malformed-message panics.
+func (ws *candysocket) handleMessage(buffer []byte) error {
+	if len(buffer) == 0 {
+		return nil
+	}
+	shared := buffer[0] == FORWARD || buffer[0] == GENERAL || buffer[0] == DISCOVERY
+	if shared {
+		ws.net.stateMu.RLock()
+		defer ws.net.stateMu.RUnlock()
+	} else {
+		ws.net.stateMu.Lock()
+		defer ws.net.stateMu.Unlock()
+	}
+	if ws.net.closed {
+		return fmt.Errorf("network was removed or replaced")
+	}
+	switch buffer[0] {
+	case AUTH:
+		return ws.handleAuthMessage(buffer)
+	case FORWARD:
+		return ws.handleForwardMessage(buffer)
+	case DHCP:
+		return ws.handleDHCPMessage(buffer)
+	case PEER:
+		return ws.handlePeerConnMessage(buffer)
+	case VMAC:
+		return ws.handleVMacMessage(buffer)
+	case DISCOVERY:
+		return ws.handleDiscoveryMessage(buffer)
+	case GENERAL:
+		return ws.handleGeneralMessage(buffer)
+	}
+	return nil
 }
 
 type candysocket struct {
@@ -105,20 +150,24 @@ func (ws *candysocket) updateReadDeadline() error {
 }
 
 func (ws *candysocket) writeCloseMessage(text string) error {
-	ws.connMutex.Lock()
-	defer ws.connMutex.Unlock()
-	return ws.conn.WriteMessage(websocket.CloseMessage, []byte(text))
+	return ws.conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, text), time.Now().Add(time.Second))
 }
 
 func (ws *candysocket) writeMessage(buffer []byte) error {
 	ws.connMutex.Lock()
 	defer ws.connMutex.Unlock()
+	if err := ws.conn.SetWriteDeadline(time.Now().Add(5 * time.Second)); err != nil {
+		return err
+	}
 	return ws.conn.WriteMessage(websocket.BinaryMessage, buffer)
 }
 
 func (ws *candysocket) writePong(buffer []byte) error {
 	ws.connMutex.Lock()
 	defer ws.connMutex.Unlock()
+	if err := ws.conn.SetWriteDeadline(time.Now().Add(5 * time.Second)); err != nil {
+		return err
+	}
 	return ws.conn.WriteMessage(websocket.PongMessage, buffer)
 }
 
@@ -144,7 +193,9 @@ func (ws *candysocket) handlePingMessage(buffer string) error {
 	}
 
 	if ws.dev.model.Online {
-		ws.dev.model.SaveOsVersionHostname()
+		if err := ws.dev.model.SaveOsVersionHostname(ws.ctx.Request.Context()); err != nil {
+			return err
+		}
 	}
 
 	ws.writePong([]byte(buffer))
@@ -171,7 +222,11 @@ func (ws *candysocket) handleAuthMessage(buffer []byte) error {
 		return fmt.Errorf("auth failed: network does not match")
 	}
 
-	if ws.net.ipConflict(uint32ToStrIp(message.IP), ws.dev.model.VMac) {
+	conflict, err := ws.net.ipConflict(ws.ctx.Request.Context(), uint32ToStrIp(message.IP), ws.dev.model.VMac)
+	if err != nil {
+		return err
+	}
+	if conflict {
 		ws.writeCloseMessage("ip conflict")
 		return fmt.Errorf("auth failed: ip conflict: %v", uint32ToStrIp(message.IP))
 	}
@@ -179,25 +234,43 @@ func (ws *candysocket) handleAuthMessage(buffer []byte) error {
 	ws.net.ipWsMapMutex.Lock()
 	defer ws.net.ipWsMapMutex.Unlock()
 
-	if oldws, ok := ws.net.ipWsMap[message.IP]; ok {
+	// Flush affected sessions before replacing them so unflushed traffic is kept.
+	for _, oldws := range ws.net.ipWsMap {
+		if oldws.dev.model.VMac == ws.dev.model.VMac || oldws.dev.ip == message.IP {
+			if err := oldws.dev.model.SaveTraffic(ws.ctx.Request.Context()); err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+				return err
+			}
+		}
+	}
+	candidate := *ws.dev.model
+	candidate.IP = uint32ToStrIp(message.IP)
+	candidate.Online = true
+	candidate.SessionID = uuid.NewString()
+	candidate.Country, candidate.Region = GetLocation(net.ParseIP(ws.ctx.ClientIP()))
+	if err := candidate.Activate(ws.ctx.Request.Context()); err != nil {
+		return err
+	}
+	if oldws, ok := ws.net.ipWsMap[message.IP]; ok && oldws != ws {
 		oldws.dev.model.Online = false
-		oldws.dev.model.SaveRxTxOnline()
 		oldws.writeCloseMessage("vmac conflict")
 		oldws.conn.Close()
 	}
-
+	// Replace other connections for the same device, including those on an old IP.
+	for ip, oldws := range ws.net.ipWsMap {
+		if oldws != ws && oldws.dev.model.ID == candidate.ID {
+			oldws.dev.model.Online = false
+			oldws.writeCloseMessage("vmac conflict")
+			oldws.conn.Close()
+			delete(ws.net.ipWsMap, ip)
+		}
+	}
+	if ws.dev.model.Online {
+		delete(ws.net.ipWsMap, ws.dev.ip)
+	}
+	*ws.dev.model = candidate
 	ws.dev.ip = message.IP
 	ws.net.ipWsMap[message.IP] = ws
-
-	db := storage.Get()
-	db.Where(ws.dev.model).First(ws.dev.model)
-	ws.dev.model.IP = uint32ToStrIp(message.IP)
-	ws.dev.model.Online = true
-	ws.dev.model.Country, ws.dev.model.Region = GetLocation(net.ParseIP(ws.ctx.ClientIP()))
-	ws.dev.model.Save()
-
-	ws.updateSystemRoute()
-	return nil
+	return ws.updateSystemRoute()
 }
 
 func (ws *candysocket) handleForwardMessage(buffer []byte) error {
@@ -215,14 +288,14 @@ func (ws *candysocket) handleForwardMessage(buffer []byte) error {
 		return err
 	}
 
-	ws.dev.model.TX += uint64(len(buffer))
+	atomic.AddUint64(&ws.dev.model.TX, uint64(len(buffer)))
 
 	ws.net.ipWsMapMutex.RLock()
 	defer ws.net.ipWsMapMutex.RUnlock()
 
 	if dstWs, ok := ws.net.ipWsMap[message.Dst]; ok {
 		dstWs.writeMessage(buffer)
-		dstWs.dev.model.RX += uint64(len(buffer))
+		atomic.AddUint64(&dstWs.dev.model.RX, uint64(len(buffer)))
 	}
 
 	broadcast := func() bool {
@@ -245,7 +318,7 @@ func (ws *candysocket) handleForwardMessage(buffer []byte) error {
 		for _, dstWs := range ws.net.ipWsMap {
 			if dstWs != ws && dstWs.dev.model.Online {
 				dstWs.writeMessage(buffer)
-				dstWs.dev.model.RX += uint64(len(buffer))
+				atomic.AddUint64(&dstWs.dev.model.RX, uint64(len(buffer)))
 			}
 		}
 	}
@@ -264,16 +337,20 @@ func (ws *candysocket) handleDHCPMessage(buffer []byte) error {
 		return err
 	}
 
-	if ws.dev.model == nil {
+	if ws.dev == nil || ws.dev.model == nil {
 		return fmt.Errorf("dhcp failed: vmac not received")
 	}
 
-	db := storage.Get()
+	db := storage.Get().WithContext(ws.ctx.Request.Context())
 
+	var queryErr error
 	// 检查能否使用数据库中地址, 地址可用时更新响应结果
 	canUseLatestAddress := func() bool {
 		device := model.Device{}
-		if db.Where(&model.Device{NetID: ws.net.model.ID, VMac: ws.dev.model.VMac}).Take(&device).Error != nil {
+		if err := db.Where(&model.Device{NetID: ws.net.model.ID, VMac: ws.dev.model.VMac}).Take(&device).Error; err != nil {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				queryErr = err
+			}
 			return false
 		}
 		ip := net.ParseIP(device.IP)
@@ -288,7 +365,12 @@ func (ws *candysocket) handleDHCPMessage(buffer []byte) error {
 		if binary.BigEndian.Uint32(ip)&ws.net.mask != ws.net.net {
 			return false
 		}
-		if ws.net.ipConflict(device.IP, ws.dev.model.VMac) {
+		conflict, err := ws.net.ipConflict(ws.ctx.Request.Context(), device.IP, ws.dev.model.VMac)
+		if err != nil {
+			queryErr = err
+			return false
+		}
+		if conflict {
 			return false
 		}
 
@@ -298,13 +380,19 @@ func (ws *candysocket) handleDHCPMessage(buffer []byte) error {
 		return true
 	}()
 
+	if queryErr != nil {
+		return queryErr
+	}
 	// 根据用户传入的地址检查是否需要生成新地址
 	needGenNewAddress := func() bool {
 		if canUseLatestAddress {
 			return false
 		}
 		cidr := func(input []byte) string {
-			return string(input[:bytes.IndexByte(input[:], 0)])
+			if end := bytes.IndexByte(input, 0); end >= 0 {
+				return string(input[:end])
+			}
+			return string(input)
 		}(message.Cidr)
 
 		ip, ipNet, err := net.ParseCIDR(cidr)
@@ -318,7 +406,10 @@ func (ws *candysocket) handleDHCPMessage(buffer []byte) error {
 			return true
 		}
 		devices := []model.Device{}
-		db.Where(&model.Device{NetID: ws.net.model.ID, IP: ip.String()}).Find(&devices)
+		if err := db.Where(&model.Device{NetID: ws.net.model.ID, IP: ip.String()}).Find(&devices).Error; err != nil {
+			queryErr = err
+			return true
+		}
 		if len(devices) > 1 {
 			return true
 		}
@@ -331,11 +422,18 @@ func (ws *candysocket) handleDHCPMessage(buffer []byte) error {
 		return true
 	}()
 
+	if queryErr != nil {
+		return queryErr
+	}
 	// 用户传入的地址也不可用时, 生成一个新地址, 并更新响应结果
 	var oldHost = ws.net.host
 	for needGenNewAddress {
 		device := &model.Device{NetID: ws.net.model.ID, IP: ws.net.updateHost()}
-		if db.Where(device).Take(&device).Error == gorm.ErrRecordNotFound {
+		err := db.Where(device).Take(&device).Error
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			ipNet := net.IPNet{IP: make(net.IP, 4), Mask: make(net.IPMask, 4)}
 			binary.BigEndian.PutUint32(ipNet.IP, ws.net.net|ws.net.host)
 			binary.BigEndian.PutUint32(ipNet.Mask, ws.net.mask)
@@ -379,12 +477,17 @@ func (ws *candysocket) handlePeerConnMessage(buffer []byte) error {
 	ip := make(net.IP, 4)
 	binary.BigEndian.PutUint32(ip, message.IP)
 	ws.dev.model.Country, ws.dev.model.Region = GetLocation(ip)
-	ws.dev.model.Save()
+	if err := ws.dev.model.SaveLocation(ws.ctx.Request.Context()); err != nil {
+		return err
+	}
 
 	return nil
 }
 
 func (ws *candysocket) handleVMacMessage(buffer []byte) error {
+	if ws.dev != nil && ws.dev.model.Online {
+		return fmt.Errorf("cannot change device identity while online")
+	}
 	r := bytes.NewReader(buffer)
 	message := &VMacMessage{}
 	if err := struc.Unpack(r, message); err != nil {
@@ -413,21 +516,21 @@ func (ws *candysocket) handleDiscoveryMessage(buffer []byte) error {
 		return fmt.Errorf("discovery failed: source address does not match login information")
 	}
 
-	ws.dev.model.TX += uint64(len(buffer))
+	atomic.AddUint64(&ws.dev.model.TX, uint64(len(buffer)))
 
 	ws.net.ipWsMapMutex.RLock()
 	defer ws.net.ipWsMapMutex.RUnlock()
 
 	if dstWs, ok := ws.net.ipWsMap[message.Dst]; ok {
 		dstWs.writeMessage(buffer)
-		dstWs.dev.model.RX += uint64(len(buffer))
+		atomic.AddUint64(&dstWs.dev.model.RX, uint64(len(buffer)))
 	}
 
 	if uint32(0xFFFFFFFF) == message.Dst {
 		for _, dstWs := range ws.net.ipWsMap {
 			if dstWs != ws && dstWs.dev.model.Online {
 				dstWs.writeMessage(buffer)
-				dstWs.dev.model.RX += uint64(len(buffer))
+				atomic.AddUint64(&dstWs.dev.model.RX, uint64(len(buffer)))
 			}
 		}
 	}
@@ -450,21 +553,21 @@ func (ws *candysocket) handleGeneralMessage(buffer []byte) error {
 		return fmt.Errorf("general failed: source address does not match login information")
 	}
 
-	ws.dev.model.TX += uint64(len(buffer))
+	atomic.AddUint64(&ws.dev.model.TX, uint64(len(buffer)))
 
 	ws.net.ipWsMapMutex.RLock()
 	defer ws.net.ipWsMapMutex.RUnlock()
 
 	if dstWs, ok := ws.net.ipWsMap[message.Dst]; ok {
 		dstWs.writeMessage(buffer)
-		dstWs.dev.model.RX += uint64(len(buffer))
+		atomic.AddUint64(&dstWs.dev.model.RX, uint64(len(buffer)))
 	}
 
 	if ws.net.model.Broadcast && uint32(0xFFFFFFFF) == message.Dst {
 		for _, dstWs := range ws.net.ipWsMap {
 			if dstWs != ws && dstWs.dev.model.Online {
 				dstWs.writeMessage(buffer)
-				dstWs.dev.model.RX += uint64(len(buffer))
+				atomic.AddUint64(&dstWs.dev.model.RX, uint64(len(buffer)))
 			}
 		}
 	}
@@ -472,13 +575,15 @@ func (ws *candysocket) handleGeneralMessage(buffer []byte) error {
 	return nil
 }
 
-func (ws *candysocket) updateSystemRoute() {
+func (ws *candysocket) updateSystemRoute() error {
 	header := &RouteMessage{Type: ROUTE, Size: 0, Reserved: 0}
 	bodyBuffer := bytes.Buffer{}
 
-	db := storage.Get()
+	db := storage.Get().WithContext(ws.ctx.Request.Context())
 	routes := []model.Route{}
-	db.Where(&model.Route{NetID: ws.net.model.ID}).Order("priority").Find(&routes)
+	if err := db.Where(&model.Route{NetID: ws.net.model.ID}).Order("priority").Find(&routes).Error; err != nil {
+		return err
+	}
 	for _, route := range routes {
 		deviceAddr := strIpToUint32(route.DevAddr)
 		deviceMask := strIpToUint32(route.DevMask)
@@ -497,4 +602,5 @@ func (ws *candysocket) updateSystemRoute() {
 		struc.Pack(&headerBuffer, header)
 		ws.writeMessage(append(headerBuffer.Bytes(), bodyBuffer.Bytes()...))
 	}
+	return nil
 }

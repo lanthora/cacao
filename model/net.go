@@ -1,18 +1,11 @@
 package model
 
 import (
-	"github.com/lanthora/cacao/logger"
+	"context"
+
 	"github.com/lanthora/cacao/storage"
 	"gorm.io/gorm"
 )
-
-func init() {
-	db := storage.Get()
-	err := db.AutoMigrate(Net{})
-	if err != nil {
-		logger.Fatal("auto migrate nets failed: %v", err)
-	}
-}
 
 type Net struct {
 	gorm.Model
@@ -24,51 +17,91 @@ type Net struct {
 	Lease     uint
 }
 
-func (n *Net) Create() {
-	db := storage.Get()
-	db.Create(n)
-}
-
-func (n *Net) Update() {
-	db := storage.Get()
-	db.Model(n).Select("*").Updates(n)
-}
-
-func (n *Net) Delete() {
-	db := storage.Get()
-	db.Delete(n)
-}
-
-func GetNets() (nets []Net) {
-	db := storage.Get()
-	db.Find(&nets)
-	return
-}
-
-func GetNetByNetID(netid uint) (net Net) {
-	if netid != 0 {
-		db := storage.Get()
-		db.Where(&Net{Model: gorm.Model{ID: netid}}).Unscoped().Take(&net)
+func (n *Net) Create(contexts ...context.Context) error {
+	original := *n
+	var saved Net
+	err := writeDB(contexts, func(tx *gorm.DB) error {
+		saved = original
+		var owner User
+		if err := tx.First(&owner, saved.UserID).Error; err != nil {
+			return err
+		}
+		if err := checkNetworkName(tx, saved.UserID, saved.Name, 0); err != nil {
+			return err
+		}
+		return tx.Create(&saved).Error
+	})
+	if storage.IsUnique(err) {
+		return ErrNetworkExists
 	}
-	return
-}
-
-func GetNetsByUserID(userid uint) (nets []Net) {
-	if userid != 0 {
-		db := storage.Get()
-		db.Where(&Net{UserID: userid}).Find(&nets)
+	if err == nil {
+		*n = saved
 	}
-	return
+	return err
+}
+func (n *Net) Update(contexts ...context.Context) error {
+	err := writeDB(contexts, func(tx *gorm.DB) error {
+		if err := checkNetworkName(tx, n.UserID, n.Name, n.ID); err != nil {
+			return err
+		}
+		return changed(tx.Model(&Net{}).Where("id = ? AND user_id = ?", n.ID, n.UserID).Updates(map[string]interface{}{"name": n.Name, "password": n.Password, "dhcp": n.DHCP, "broadcast": n.Broadcast, "lease": n.Lease}))
+	})
+	if storage.IsUnique(err) {
+		return ErrNetworkExists
+	}
+	return err
+}
+func (n *Net) Delete(contexts ...context.Context) error {
+	return writeDB(contexts, func(tx *gorm.DB) error {
+		if err := changed(tx.Where("id = ? AND user_id = ?", n.ID, n.UserID).Delete(&Net{})); err != nil {
+			return err
+		}
+		if err := tx.Where("net_id = ?", n.ID).Delete(&Device{}).Error; err != nil {
+			return err
+		}
+		return tx.Where("net_id = ?", n.ID).Delete(&Route{}).Error
+	})
+}
+func GetNets(contexts ...context.Context) ([]Net, error) {
+	var rows []Net
+	err := readDB(contexts).Find(&rows).Error
+	return rows, err
+}
+func GetNetByNetID(id uint, contexts ...context.Context) (Net, error) {
+	var row Net
+	if id == 0 {
+		return row, gorm.ErrRecordNotFound
+	}
+	err := readDB(contexts).First(&row, id).Error
+	return row, err
+}
+func GetNetsByUserID(id uint, contexts ...context.Context) ([]Net, error) {
+	var rows []Net
+	err := readDB(contexts).Where("user_id = ?", id).Find(&rows).Error
+	return rows, err
+}
+func GetNetIdByUsernameAndNetname(username, name string, contexts ...context.Context) (uint, error) {
+	var rows []Net
+	err := readDB(contexts).Select("nets.id").Joins("JOIN users ON users.id = nets.user_id AND users.deleted_at IS NULL").Where("users.name = ? AND nets.name = ?", username, name).Limit(2).Find(&rows).Error
+	if err != nil {
+		return 0, err
+	}
+	if len(rows) == 0 {
+		return 0, gorm.ErrRecordNotFound
+	}
+	if len(rows) > 1 {
+		return 0, ErrAmbiguousData
+	}
+	return rows[0].ID, nil
 }
 
-func GetNetIdByUsernameAndNetname(username, netname string) uint {
-	netid := uint(0)
-	db := storage.Get()
-	db.Model(&Net{}).Select("nets.id").Joins("left join users on users.id = nets.user_id").Where("users.name = ? and nets.name = ?", username, netname).Take(&netid)
-	return netid
-}
-
-func DeleteNetByNetID(netid uint) {
-	db := storage.Get()
-	db.Delete(&Net{Model: gorm.Model{ID: netid}})
+func checkNetworkName(tx *gorm.DB, userID uint, name string, except uint) error {
+	var count int64
+	if err := tx.Model(&Net{}).Where("user_id = ? AND name = ? AND id <> ?", userID, name, except).Count(&count).Error; err != nil {
+		return err
+	}
+	if count > 0 {
+		return ErrNetworkExists
+	}
+	return nil
 }

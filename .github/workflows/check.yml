@@ -18,5 +18,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: "stable"
+      - name: database and concurrency tests
+        run: go test -race ./...
       - name: compile
         run: make all

@@ -13,9 +13,9 @@ import (
 func AdminGetGeoDBConfig(c *gin.Context) {
 	configs := make([]model.GeoDBConfig, 0, 2)
 	for _, kind := range []string{"ipdb", "mmdb"} {
-		config, err := model.GetGeoDBConfig(kind)
+		config, err := model.GetGeoDBConfigContext(c.Request.Context(), kind)
 		if err != nil {
-			setUnexpectedMessage(c, err.Error())
+			databaseError(c, err, Unexpected)
 			return
 		}
 		configs = append(configs, config)
@@ -33,8 +33,8 @@ func AdminSetGeoDBConfig(c *gin.Context) {
 		setResponse(c, InvalidRequest, err.Error(), nil)
 		return
 	}
-	if err := model.SaveGeoDBConfig(request); err != nil {
-		setUnexpectedMessage(c, err.Error())
+	if err := model.SaveGeoDBConfig(request, c.Request.Context()); err != nil {
+		databaseError(c, err, Unexpected)
 		return
 	}
 	setResponseData(c, nil)
@@ -58,9 +58,9 @@ func AdminUpdateGeoDB(c *gin.Context) {
 		}
 		return
 	}
-	config, err := model.GetGeoDBConfig(request.Type)
+	config, err := model.GetGeoDBConfigContext(c.Request.Context(), request.Type)
 	if err != nil {
-		setUnexpectedMessage(c, err.Error())
+		databaseError(c, err, Unexpected)
 		return
 	}
 	setResponseData(c, gin.H{"lastSuccessAt": config.LastSuccessAt})

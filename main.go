@@ -10,6 +10,8 @@ import (
 	"github.com/lanthora/cacao/candy"
 	"github.com/lanthora/cacao/frontend"
 	"github.com/lanthora/cacao/logger"
+	"github.com/lanthora/cacao/model"
+	"github.com/lanthora/cacao/storage"
 	"github.com/lanthora/cacao/util"
 )
 
@@ -20,10 +22,19 @@ func init() {
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+	if err := storage.Initialize(argp.Get("storage", ".")); err != nil {
+		logger.Fatal("initialize storage: %v", err)
+	}
+	if err := model.Initialize(); err != nil {
+		logger.Fatal("initialize schema: %v", err)
+	}
+	if err := candy.Start(ctx); err != nil {
+		logger.Fatal("initialize runtime: %v", err)
+	}
 	candy.GeoDatabases.Start(ctx)
 
 	r := gin.New()
-	r.Use(candy.WebsocketMiddleware(), api.LoginMiddleware(), api.AdminMiddleware())
+	r.Use(candy.WebsocketMiddleware(), api.DatabaseContextMiddleware(), api.LoginMiddleware(), api.AdminMiddleware())
 
 	admin := r.Group("/api/admin")
 	admin.POST("/showUsers", api.AdminShowUsers)

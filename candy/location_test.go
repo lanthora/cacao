@@ -6,12 +6,8 @@ import (
 )
 
 func TestGetLocation(t *testing.T) {
-	ipStr := "110.242.68.66"
-	ip := net.ParseIP(ipStr)
-	if ip == nil {
-		t.Fatalf("Invalid IP address: %s", ipStr)
+	country, region := GetLocation(net.ParseIP("10.0.0.1"))
+	if country != "" || region != "" {
+		t.Fatalf("private IP location: %q %q", country, region)
 	}
-
-	country, region := GetLocation(ip)
-	t.Logf("IP: %v location: country=%v, region=%v", ipStr, country, region)
 }
