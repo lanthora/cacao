@@ -12,6 +12,9 @@ export default {
         or: '或者'
     },
     register: {
+        confirmPassword: "确认密码",
+        inputConfirmPassword: "请再次输入密码",
+        passwordMismatch: "两次输入的密码不一致",
         haveAccount: "已有账号？",
         username: '用户名',
         password: '密码',

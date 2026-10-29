@@ -12,6 +12,9 @@ export default {
         or: 'Or'
     },
     register: {
+        confirmPassword: "Confirm password",
+        inputConfirmPassword: "Please enter your password again",
+        passwordMismatch: "Passwords do not match",
         haveAccount: "Already have an account?",
         username: 'Username',
         password: 'Password',

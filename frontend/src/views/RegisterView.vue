@@ -1,6 +1,7 @@
 <template>
   <auth-layout :title="$t('register.register')" :error="error">
     <a-form
+      ref="formRef"
       :model="formState"
       :hide-required-mark="true"
       name="register"
@@ -35,6 +36,21 @@
           :disabled="submitting"
         />
       </a-form-item>
+      <a-form-item
+        name="confirmPassword"
+        :rules="[
+          { required: true, message: $t('register.inputConfirmPassword') },
+          { validator: validateConfirmPassword }
+        ]"
+      >
+        <a-input-password
+          v-model:value="formState.confirmPassword"
+          :placeholder="$t('register.confirmPassword')"
+          :aria-label="$t('register.confirmPassword')"
+          autocomplete="new-password"
+          :disabled="submitting"
+        />
+      </a-form-item>
       <a-form-item>
         <a-button type="primary" html-type="submit" class="auth-submit" :loading="submitting">{{
           $t('register.register')
@@ -49,7 +65,7 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import axios from 'axios'
@@ -57,9 +73,25 @@ import AuthLayout from '../components/AuthLayout.vue'
 
 const router = useRouter()
 const { t } = useI18n()
-const formState = reactive({ username: '', password: '' })
+const formRef = ref()
+const formState = reactive({ username: '', password: '', confirmPassword: '' })
 const submitting = ref(false)
 const error = ref('')
+
+const validateConfirmPassword = async (_rule, value) => {
+  if (value && value !== formState.password) {
+    throw new Error(t('register.passwordMismatch'))
+  }
+}
+
+watch(
+  () => formState.password,
+  () => {
+    if (formState.confirmPassword) {
+      formRef.value?.validateFields(['confirmPassword']).catch(() => {})
+    }
+  }
+)
 
 const onFinish = async (values) => {
   if (submitting.value) return
