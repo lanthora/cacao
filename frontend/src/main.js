@@ -6,7 +6,6 @@ import i18n from './i18n/index'
 import RegisterView from './views/RegisterView.vue'
 import LoginView from './views/LoginView.vue'
 import AdminUser from './views/AdminUser.vue'
-import AdminLicense from './views/AdminLicense.vue'
 import LoadingView from './views/LoadingView.vue'
 import RouteView from './views/RouteView.vue'
 import UserView from './views/UserView.vue'
@@ -23,7 +22,6 @@ const routes = [
   { path: '/device', component: DeviceView },
   { path: '/route', component: RouteView },
   { path: '/user', component: UserView },
-  { path: '/admin/license', component: AdminLicense },
   { path: '/admin/user', component: AdminUser },
   { path: '/admin/setting', component: () => import('./views/AdminSetting.vue') },
   { path: '/:pathMatch(.*)', redirect: '/' }

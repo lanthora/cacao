@@ -200,17 +200,6 @@ export default {
             success: 'success'
         }
     },
-    adminLicense: {
-        title: 'License',
-        subtitle: 'license information',
-        renew: 'Renew',
-        columns: {
-            licenseId: 'License ID',
-            description: 'Description',
-            expire: 'Expire',
-            action: 'Action'
-        }
-    },
     components: {
         sider: {
             statistics: 'Statistics',
@@ -219,7 +208,6 @@ export default {
             route: 'Route',
             user: 'User',
             setting: 'Setting',
-            license: 'License',
             logout: 'Logout'
         },
         footer: {

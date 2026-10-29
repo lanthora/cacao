@@ -200,17 +200,6 @@ export default {
             success: '清理成功'
         }
     },
-    adminLicense: {
-        title: '许可证',
-        subtitle: '许可证信息',
-        renew: '续期',
-        columns: {
-            licenseId: '许可证ID',
-            description: '描述',
-            expire: '过期时间',
-            action: '操作'
-        }
-    },
     components: {
         sider: {
             statistics: '统计',
@@ -219,7 +208,6 @@ export default {
             route: '路由',
             user: '用户',
             setting: '设置',
-            license: '许可证',
             logout: '退出'
         },
         footer: {
