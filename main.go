@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"path"
 
 	"github.com/gin-gonic/gin"
@@ -17,6 +18,10 @@ func init() {
 }
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	candy.GeoDatabases.Start(ctx)
+
 	r := gin.New()
 	r.Use(candy.WebsocketMiddleware(), api.LoginMiddleware(), api.AdminMiddleware())
 
@@ -34,6 +39,9 @@ func main() {
 	admin.POST("/getInactiveUserThresholdConfig", api.AdminGetInactiveUserThresholdConfig)
 	admin.POST("/setInactiveUserThresholdConfig", api.AdminSetInactiveUserThresholdConfig)
 	admin.POST("/cleanInactiveUser", api.AdminCleanInactiveUser)
+	admin.POST("/getGeoDBConfig", api.AdminGetGeoDBConfig)
+	admin.POST("/setGeoDBConfig", api.AdminSetGeoDBConfig)
+	admin.POST("/updateGeoDB", api.AdminUpdateGeoDB)
 
 	user := r.Group("/api/user")
 	user.POST("/info", api.UserInfo)

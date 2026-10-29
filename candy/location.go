@@ -4,14 +4,11 @@ import (
 	"crypto/tls"
 	"net"
 	"net/http"
-	"path"
 
 	"github.com/ipinfo/go/v2/ipinfo"
 	"github.com/ipinfo/go/v2/ipinfo/cache"
 	"github.com/ipipdotnet/ipdb-go"
-	"github.com/lanthora/cacao/argp"
 	"github.com/lanthora/cacao/logger"
-	"github.com/lanthora/cacao/util"
 	"github.com/oschwald/geoip2-golang"
 )
 
@@ -63,12 +60,12 @@ func ipinfoLocation(ip net.IP) (country, region string, ok bool) {
 }
 
 func mmdbLocation(ip net.IP) (country, region string, ok bool) {
-	storageDir := argp.Get("storage", ".")
-	filename, err := util.FindFileByExtFromDir(storageDir, ".mmdb")
+	filename, release, err := GeoDatabases.acquire("mmdb")
+	defer release()
 	if err != nil {
 		return
 	}
-	db, err := geoip2.Open(path.Join(storageDir, filename))
+	db, err := geoip2.Open(filename)
 	if err != nil {
 		logger.Debug("open mmdb failed: %v", err)
 		return
@@ -90,13 +87,13 @@ func mmdbLocation(ip net.IP) (country, region string, ok bool) {
 }
 
 func ipdbLocation(ip net.IP) (country, region string, ok bool) {
-	storageDir := argp.Get("storage", ".")
-	filename, err := util.FindFileByExtFromDir(storageDir, ".ipdb")
+	filename, release, err := GeoDatabases.acquire("ipdb")
+	defer release()
 	if err != nil {
 		return
 	}
 
-	db, err := ipdb.NewCity(path.Join(storageDir, filename))
+	db, err := ipdb.NewCity(filename)
 	if err != nil {
 		logger.Debug("open ipdb failed: %v", err)
 		return

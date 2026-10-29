@@ -6,7 +6,6 @@ import i18n from './i18n/index'
 import RegisterView from './views/RegisterView.vue'
 import LoginView from './views/LoginView.vue'
 import AdminUser from './views/AdminUser.vue'
-import AdminSetting from './views/AdminSetting.vue'
 import AdminLicense from './views/AdminLicense.vue'
 import LoadingView from './views/LoadingView.vue'
 import RouteView from './views/RouteView.vue'
@@ -26,7 +25,7 @@ const routes = [
   { path: '/user', component: UserView },
   { path: '/admin/license', component: AdminLicense },
   { path: '/admin/user', component: AdminUser },
-  { path: '/admin/setting', component: AdminSetting },
+  { path: '/admin/setting', component: () => import('./views/AdminSetting.vue') },
   { path: '/:pathMatch(.*)', redirect: '/' }
 ]
 

@@ -8,6 +8,8 @@ import (
 
 func init() {
 	statusMessage = make(map[int]string)
+	statusMessage[GeoDBUpdateBusy] = "database update already in progress"
+	statusMessage[GeoDBUpdateFailed] = "database update failed"
 	statusMessage[Success] = "success"
 	statusMessage[Unexpected] = "unexpected"
 	statusMessage[NotLoggedIn] = "not logged in"
@@ -55,6 +57,8 @@ const (
 	DeviceNotExists
 	CannotDeleteOnlineDevice
 	InvalidInactiveUserThreshold
+	GeoDBUpdateBusy
+	GeoDBUpdateFailed
 )
 
 var statusMessage map[int]string

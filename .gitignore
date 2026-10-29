@@ -6,3 +6,4 @@ cookie
 *.crt
 *.key
 .history
+!candy/testdata/*.mmdb
