@@ -1,31 +1,27 @@
 <template>
-  <a-config-provider
-    :theme="{ token: { colorPrimary: '#3b806b', colorInfo: '#3b806b', borderRadius: 8 } }"
-  >
-    <div class="auth-layout">
-      <page-header />
-      <div class="auth-content">
-        <div class="auth-panel">
-          <section class="auth-card" aria-labelledby="auth-title">
-            <h1 id="auth-title" class="sr-only">{{ title }}</h1>
-            <a-alert
-              v-if="error"
-              class="auth-error"
-              type="error"
-              show-icon
-              :message="error"
-              role="alert"
-            />
-            <slot />
-            <footer class="auth-footer"><slot name="footer" /></footer>
-          </section>
-          <div class="auth-utilities">
-            <span>{{ $t('components.footer.copyright', { year: new Date().getFullYear() }) }}</span>
-          </div>
+  <div class="auth-layout">
+    <page-header />
+    <div class="auth-content">
+      <div class="auth-panel">
+        <section class="auth-card" aria-labelledby="auth-title">
+          <h1 id="auth-title" class="sr-only">{{ title }}</h1>
+          <a-alert
+            v-if="error"
+            class="auth-error"
+            type="error"
+            show-icon
+            :message="error"
+            role="alert"
+          />
+          <slot />
+          <footer class="auth-footer"><slot name="footer" /></footer>
+        </section>
+        <div class="auth-utilities">
+          <span>{{ $t('components.footer.copyright', { year: new Date().getFullYear() }) }}</span>
         </div>
       </div>
     </div>
-  </a-config-provider>
+  </div>
 </template>
 
 <script setup>

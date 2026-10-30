@@ -1,5 +1,5 @@
 <template>
-  <a-config-provider :theme="{ token: { colorPrimary: '#147d70', borderRadius: 8 } }">
+  <a-config-provider :theme="{ token: { colorPrimary: '#147d70' } }">
     <a-layout class="settings-layout">
       <admin-sider value="setting" />
       <a-layout class="settings-main">

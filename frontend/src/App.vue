@@ -1,7 +1,11 @@
 <template>
-  <main>
-    <RouterView />
-  </main>
+  <a-config-provider
+    :theme="{ token: { colorPrimary: '#3b806b', colorInfo: '#3b806b', borderRadius: 8 } }"
+  >
+    <main>
+      <RouterView />
+    </main>
+  </a-config-provider>
 </template>
 
 <script setup>
