@@ -5,7 +5,7 @@ default: cacao
 all: linux-amd64 linux-arm64 linux-armv7 freebsd-amd64 windows-amd64
 
 frontend:
-	cd frontend && npm run build || (npm install && npm run build)
+	cd frontend && npm ci && npm run build
 
 cacao: frontend
 	$(GOBUILD)
