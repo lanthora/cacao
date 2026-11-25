@@ -37,6 +37,43 @@ type Device struct {
 	ip    uint32
 }
 
+// snapshotDevice copies a live device without reading the atomic traffic
+// counters non-atomically.
+func snapshotDevice(device *model.Device) model.Device {
+	return model.Device{
+		Model:     device.Model,
+		NetID:     device.NetID,
+		VMac:      device.VMac,
+		SessionID: device.SessionID,
+		IP:        device.IP,
+		Online:    device.Online,
+		OS:        device.OS,
+		Version:   device.Version,
+		Hostname:  device.Hostname,
+		Country:   device.Country,
+		Region:    device.Region,
+		RX:        atomic.LoadUint64(&device.RX),
+		TX:        atomic.LoadUint64(&device.TX),
+	}
+}
+
+// assignDevice updates every field except the atomic traffic counters. The
+// counters are updated by packet handling goroutines and must never be written
+// as part of a structure copy.
+func assignDevice(dst, src *model.Device) {
+	dst.Model = src.Model
+	dst.NetID = src.NetID
+	dst.VMac = src.VMac
+	dst.SessionID = src.SessionID
+	dst.IP = src.IP
+	dst.Online = src.Online
+	dst.OS = src.OS
+	dst.Version = src.Version
+	dst.Hostname = src.Hostname
+	dst.Country = src.Country
+	dst.Region = src.Region
+}
+
 // UpdateDeviceIP orders validation/commit and targeted disconnection against
 // network replacement, DHCP offers and authentication. No socket is closed on failure.
 func UpdateDeviceIP(ctx context.Context, userID, deviceID uint, address string) (model.Device, error) {
@@ -71,6 +108,7 @@ func UpdateDeviceIP(ctx context.Context, userID, deviceID uint, address string) 
 	for ip, ws := range n.ipWsMap {
 		if ws.dev.model.ID == deviceID {
 			ws.dev.model.Online = false
+			ws.stopRelay()
 			delete(n.ipWsMap, ip)
 			_ = ws.writeCloseMessage("ip changed")
 			_ = ws.conn.Close()

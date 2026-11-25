@@ -8,8 +8,19 @@ const (
 	VMAC      uint8 = 4
 	DISCOVERY uint8 = 5
 	ROUTE     uint8 = 6
+	MULTI     uint8 = 7
+	JOIN      uint8 = 8
 	GENERAL   uint8 = 255
 )
+
+// MultiMessage negotiates the additional WebSocket connections of a client.
+// The same 34-byte message is echoed by the server and reused with Type=JOIN
+// on every additional connection.
+type MultiMessage struct {
+	Type  uint8    `struc:"uint8"`
+	Count uint8    `struc:"uint8"`
+	Key   [32]byte `struc:"[32]byte"`
+}
 
 type AuthMessage struct {
 	Type      uint8    `struc:"uint8"`
