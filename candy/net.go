@@ -150,6 +150,7 @@ func (n *Net) close(retire bool) {
 	n.ipWsMapMutex.Lock()
 	defer n.ipWsMapMutex.Unlock()
 	for ip, ws := range n.ipWsMap {
+		ws.stopRelay()
 		ws.writeCloseMessage("net close")
 		ws.conn.Close()
 		delete(n.ipWsMap, ip)

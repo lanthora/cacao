@@ -60,6 +60,28 @@ reconnect. Offline devices receive it on their next connection. Clients configur
 with a static IP continue to use their own configuration. No schema migration or
 client protocol change is required.
 
+## Multi-connection relay
+
+Candy clients started with `--connections N` (1-8) can negotiate additional
+WebSocket connections after authentication. Cacao supports that negotiation,
+keeps the negotiated number of data connections alive and distributes forwarded
+IP packets over them; control-plane messages continue to use the control
+connection.
+
+A lost data connection does not require a session restart: clients that support
+replenishment re-establish it with the session key, and the server accepts the
+replacement as long as the connection count matches the negotiated target. A
+data connection that has not delivered any frame for 25 seconds can be replaced,
+and one temporary extra connection is allowed while both sides converge. If every data connection is
+gone, traffic automatically falls back to the control connection until a
+replacement arrives. Older clients that never negotiate extra connections are
+unaffected; the wire format is unchanged.
+
+Data connections are not separate devices: they share the authenticated device
+session and its traffic counters, never appear in the online device list and are
+closed when the control connection, device address or network changes. See
+[multi-connection relay](docs/relay.md) for the protocol and limits.
+
 ## Database reliability
 
 Database operations use bounded SQLite transactions, checked errors and explicit

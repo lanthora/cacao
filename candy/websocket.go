@@ -75,17 +75,25 @@ func handleWebsocket(c *gin.Context) {
 			logger.Debug("handle client message failed: %v", err)
 			break
 		}
+		if ws.data {
+			ws.serveRelay()
+			return
+		}
 	}
 
 }
 
 func (ws *candysocket) disconnect() {
+	if ws.data {
+		return
+	}
+	ws.stopRelay()
 	net := ws.net
 	net.stateMu.Lock()
 	var disconnected *model.Device
 	if ws.dev != nil && ws.dev.model.Online {
 		ws.dev.model.Online = false
-		snapshot := *ws.dev.model
+		snapshot := snapshotDevice(ws.dev.model)
 		disconnected = &snapshot
 		net.ipWsMapMutex.Lock()
 		if net.ipWsMap[ws.dev.ip] == ws {
@@ -129,6 +137,10 @@ func (ws *candysocket) handleMessage(buffer []byte) error {
 		return ws.handleVMacMessage(buffer)
 	case DISCOVERY:
 		return ws.handleDiscoveryMessage(buffer)
+	case MULTI:
+		return ws.handleMultiMessage(buffer)
+	case JOIN:
+		return ws.handleJoinMessage(buffer)
 	case GENERAL:
 		return ws.handleGeneralMessage(buffer)
 	}
@@ -143,6 +155,8 @@ type candysocket struct {
 	connMutex     sync.Mutex
 	dev           *Device
 	net           *Net
+	relay         *relay
+	data          bool
 }
 
 func (ws *candysocket) updateReadDeadline() error {
@@ -242,12 +256,13 @@ func (ws *candysocket) handleAuthMessage(buffer []byte) error {
 	// Flush affected sessions before replacing them so unflushed traffic is kept.
 	for _, oldws := range ws.net.ipWsMap {
 		if oldws.dev.model.VMac == ws.dev.model.VMac || oldws.dev.ip == message.IP {
-			if err := oldws.dev.model.SaveTraffic(ws.ctx.Request.Context()); err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			snapshot := snapshotDevice(oldws.dev.model)
+			if err := snapshot.SaveTraffic(ws.ctx.Request.Context()); err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 				return err
 			}
 		}
 	}
-	candidate := *ws.dev.model
+	candidate := snapshotDevice(ws.dev.model)
 	candidate.IP = uint32ToStrIp(message.IP)
 	candidate.Online = true
 	candidate.SessionID = uuid.NewString()
@@ -257,6 +272,7 @@ func (ws *candysocket) handleAuthMessage(buffer []byte) error {
 	}
 	if oldws, ok := ws.net.ipWsMap[message.IP]; ok && oldws != ws {
 		oldws.dev.model.Online = false
+		oldws.stopRelay()
 		oldws.writeCloseMessage("vmac conflict")
 		oldws.conn.Close()
 	}
@@ -264,6 +280,7 @@ func (ws *candysocket) handleAuthMessage(buffer []byte) error {
 	for ip, oldws := range ws.net.ipWsMap {
 		if oldws != ws && oldws.dev.model.ID == candidate.ID {
 			oldws.dev.model.Online = false
+			oldws.stopRelay()
 			oldws.writeCloseMessage("vmac conflict")
 			oldws.conn.Close()
 			delete(ws.net.ipWsMap, ip)
@@ -272,7 +289,9 @@ func (ws *candysocket) handleAuthMessage(buffer []byte) error {
 	if ws.dev.model.Online {
 		delete(ws.net.ipWsMap, ws.dev.ip)
 	}
-	*ws.dev.model = candidate
+	// Never overwrite the atomic traffic counters with the snapshot; other
+	// goroutines may still be updating them.
+	assignDevice(ws.dev.model, &candidate)
 	ws.dev.ip = message.IP
 	ws.net.ipWsMap[message.IP] = ws
 	return ws.updateSystemRoute()
@@ -299,8 +318,7 @@ func (ws *candysocket) handleForwardMessage(buffer []byte) error {
 	defer ws.net.ipWsMapMutex.RUnlock()
 
 	if dstWs, ok := ws.net.ipWsMap[message.Dst]; ok {
-		dstWs.writeMessage(buffer)
-		atomic.AddUint64(&dstWs.dev.model.RX, uint64(len(buffer)))
+		dstWs.sendPacket(buffer)
 	}
 
 	broadcast := func() bool {
@@ -321,9 +339,8 @@ func (ws *candysocket) handleForwardMessage(buffer []byte) error {
 
 	if broadcast {
 		for _, dstWs := range ws.net.ipWsMap {
-			if dstWs != ws && dstWs.dev.model.Online {
-				dstWs.writeMessage(buffer)
-				atomic.AddUint64(&dstWs.dev.model.RX, uint64(len(buffer)))
+			if dstWs.dev.model.ID != ws.dev.model.ID && dstWs.dev.model.Online {
+				dstWs.sendPacket(buffer)
 			}
 		}
 	}
